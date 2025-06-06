@@ -1,0 +1,20 @@
+{{define "layout"}}
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>{{block "title" .}}数据库巡检报告{{end}}</title>
+    <link rel="stylesheet" href="/static/libs/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <div class="container-fluid">
+        {{block "content" .}}{{end}}
+    </div>
+    <script src="/static/libs/bootstrap.bundle.min.js"></script>
+    <script src="/static/libs/chart.min.js"></script>
+    <script src="/static/js/form-handler.js"></script>
+</body>
+</html>
+{{end}}

@@ -1,0 +1,323 @@
+{{define "title"}}{{.Title}}{{end}}
+
+{{define "content"}}
+    <script defer src="/static/libs/chart.umd.min.js"></script>
+    <script defer src="/static/libs/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <!-- 添加Bootstrap Icons库 -->
+    <link rel="stylesheet" href="/static/fonts/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/report_styles.css">
+    <script defer src="/static/js/report_scripts.js"></script>
+    <div class="container-fluid p-0">
+      <div class="row g-0">
+        <!-- 侧边导航 -->
+        <nav class="col-md-3 col-lg-2 sidebar">
+          <!-- 侧边栏标题 -->
+          <div class="d-flex align-items-center p-3 mb-3 border-bottom">
+            <i class="bi bi-database-check me-2 text-primary fs-4"></i>
+            <span class="fs-5 fw-bold" data-lang-key="sidebar_title">Oracle 巡检报告</span>
+          </div>
+      
+      <div class="d-flex flex-column h-100">
+        <!-- 数据库基本信息 -->
+        <div class="px-3 py-3">
+          <h6 class="sidebar-heading text-uppercase mb-2" data-lang-key="db_info">数据库信息</h6>
+          <div class="db-info-container">
+            <div class="d-flex align-items-center mb-2">
+              <span class="badge bg-primary me-2">{{.DbVersion}}</span>
+              <span class="fw-medium">{{.DbInfo}}</span>
+            </div>
+            <div class="small mb-1">
+              <i class="bi bi-hdd-network me-1 text-secondary"></i>
+              <span class="text-secondary">{{.DbConnection}}</span>
+            </div>
+            <div class="small d-flex align-items-center">
+              <i class="bi bi-clock me-1 text-secondary"></i>
+              <span class="text-secondary"><span data-lang-key="inspection_time">巡检时间:</span> {{.GeneratedAt}}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 导航菜单 -->
+        <div class="px-3">
+          <div class="d-flex align-items-center my-3">
+            <i class="bi bi-layers me-2 text-secondary"></i>
+            <h6 class="sidebar-heading mb-0 text-uppercase" data-lang-key="inspection_modules">巡检模块</h6>
+          </div>
+          
+          <ul class="nav flex-column mb-4">
+            <li class="nav-item">
+              <a class="nav-link active" href="#" data-section-id="all">
+                <i class="bi bi-grid-fill"></i>
+                <span data-lang-key="report_overview">报告总览</span>
+              </a>
+            </li>
+            {{range $index, $module := .Modules}}
+            <li class="nav-item">
+              <a class="nav-link" href="#" data-section-id="{{$module.ID}}">
+                {{if eq $module.ID "dbinfo"}}<i class="bi bi-info-circle-fill"></i>
+                {{else if eq $module.ID "storage"}}<i class="bi bi-hdd-stack-fill"></i>
+                {{else if eq $module.ID "parameters"}}<i class="bi bi-sliders"></i>
+                {{else if eq $module.ID "backup"}}<i class="bi bi-archive-fill"></i>
+                {{else if eq $module.ID "performance"}}<i class="bi bi-speedometer2"></i>
+                {{else if eq $module.ID "security"}}<i class="bi bi-shield-lock-fill"></i>
+                {{else if eq $module.ID "users"}}<i class="bi bi-people-fill"></i>
+                {{else if eq $module.ID "objects"}}<i class="bi bi-table"></i>
+                {{else if eq $module.ID "sessions"}}<i class="bi bi-people"></i>
+                {{else}}<i class="bi bi-file-earmark-text-fill"></i>{{end}}
+                {{$module.Name}}
+              </a>
+            </li>
+            {{end}}
+          </ul>
+        </div>
+
+        <!-- 风格选择区域 -->
+        <div class="mt-auto px-3 py-3 border-top">
+          <div class="d-flex align-items-center mb-3">
+            <i class="bi bi-palette me-2 text-secondary"></i>
+            <h6 class="sidebar-heading mb-0 text-uppercase" data-lang-key="report_settings">报告设置</h6>
+          </div>
+          
+          <!-- 风格选择区域 -->
+          <div class="mb-3">
+            <label class="form-label small mb-2 text-secondary" data-lang-key="display_style">显示风格</label>
+            <div class="btn-group d-flex" role="group" aria-label="风格选择">
+              <button type="button" class="btn btn-sm btn-outline-primary active" onclick="changeReportStyle('default')" id="style-default" data-lang-key="style_default">默认</button>
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="changeReportStyle('light')" id="style-light" data-lang-key="style_light">浅色</button>
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="changeReportStyle('blue')" id="style-blue" data-lang-key="style_blue">清新</button>
+            </div>
+          </div>
+          
+          <!-- 显示选项 -->
+          <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" id="compactModeSwitch" onchange="toggleCompactMode(this.checked)">
+            <label class="form-check-label small" for="compactModeSwitch" data-lang-key="compact_mode">紧凑模式</label>
+          </div>
+          
+          <!-- 已移除下载按钮 -->
+        </div>
+      </div>
+    </nav>
+
+    <!-- 主体内容区 -->
+    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-3">
+      <!-- 内容区头部 -->
+      <div class="content-header d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+          <h1>
+            <i class="bi bi-clipboard-data me-2" style="color: var(--primary-blue)"></i>
+            <span data-lang-key="main_title">数据库巡检报告</span>
+          </h1>
+          <span class="badge bg-primary ms-3">{{.DbVersion}}</span>
+        </div>
+        
+        <!-- 工具栏 -->
+        <div class="d-flex align-items-center">
+          <button class="btn btn-sm btn-outline-secondary me-2" onclick="window.print()" data-lang-key="print_btn">
+            <i class="bi bi-printer me-1"></i> 打印
+          </button>
+          <button class="btn btn-sm btn-outline-primary" onclick="ReportExporter.exportReport()" data-lang-key="export_btn">
+            <i class="bi bi-file-earmark-arrow-down me-1"></i> 导出
+          </button>
+        </div>
+      </div>
+
+      <!-- 报告总览部分 -->
+      <section id="section-all" class="report-section mb-4">
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="card shadow-sm">
+              <div class="card-header bg-white">
+                <h5 class="card-title mb-0" data-lang-key="summary">巡检概要</h5>
+              </div>
+              <div class="card-body">
+                <p data-lang-key="summary_desc">本报告包含以下巡检模块的数据分析结果：</p>
+                <div class="row">
+                  {{range $index, $module := .Modules}}
+                  <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card h-100 main-info-card">
+                      <div class="card-body">
+                        <h5 class="card-title">
+                          {{if eq $module.ID "dbinfo"}}<i class="bi bi-info-circle-fill text-info me-2"></i>
+                          {{else if eq $module.ID "storage"}}<i class="bi bi-hdd-stack-fill text-warning me-2"></i>
+                          {{else if eq $module.ID "params"}}<i class="bi bi-sliders text-success me-2"></i>
+                          {{else if eq $module.ID "backup"}}<i class="bi bi-save-fill text-info me-2"></i>
+                          {{else if eq $module.ID "performance"}}<i class="bi bi-speedometer2 text-danger me-2"></i>
+                          {{else if eq $module.ID "security"}}<i class="bi bi-shield-lock-fill text-secondary me-2"></i>
+                          {{else if eq $module.ID "objects"}}<i class="bi bi-table text-warning me-2"></i>
+                          {{else if eq $module.ID "sessions"}}<i class="bi bi-people text-success me-2"></i>
+                          {{else}}<i class="bi bi-file-earmark-text-fill text-secondary me-2"></i>{{end}}
+                          {{$module.Name}}
+                        </h5>
+                        <a href="#" onclick="showSection('{{$module.ID}}', document.querySelector('.nav-link[data-section-id=\'{{$module.ID}}\']')); return false;" class="stretched-link"></a>
+                      </div>
+                    </div>
+                  </div>
+                  {{end}}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 各模块内容区域 -->
+      {{range .Modules}}
+      <section id="section-{{.ID}}" class="report-section mb-5">
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-white py-3">
+            <h5 class="card-title mb-0">
+              {{if eq .ID "dbinfo"}}<i class="bi bi-info-circle-fill text-info me-2"></i>
+              {{else if eq .ID "storage"}}<i class="bi bi-hdd-stack-fill text-warning me-2"></i>
+              {{else if eq .ID "params"}}<i class="bi bi-sliders text-success me-2"></i>
+              {{else if eq .ID "backup"}}<i class="bi bi-save"></i>
+              {{else if eq .ID "performance"}}<i class="bi bi-speedometer2 text-danger me-2"></i>
+              {{else if eq .ID "security"}}<i class="bi bi-shield-lock-fill text-secondary me-2"></i>
+              {{else if eq .ID "objects"}}<i class="bi bi-table text-warning me-2"></i>
+              {{else if eq .ID "sessions"}}<i class="bi bi-people text-success me-2"></i>
+              {{else}}<i class="bi bi-file-earmark-text-fill text-secondary me-2"></i>{{end}}
+              {{.Name}}
+            </h5>
+          </div>
+          <div class="card-body">
+            {{if .Cards}}
+            <div class="row mb-4">
+              {{range .Cards}}
+              <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 main-info-card">
+                  <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">{{.Title}}</h6>
+                    <p class="card-text fs-5">{{.Value}}</p>
+                  </div>
+                </div>
+              </div>
+              {{end}}
+            </div>
+            {{end}}
+
+            {{if .Tables}}
+            {{range .Tables}} {{/* Iterate over the Tables slice */}}
+            <div class="table-container mt-3 mb-4"> {{/* Container for each table */}}
+              <div>
+                <table class="table table-striped table-hover table-bordered caption-top mb-0">
+                  {{if .Name}}<caption class="ps-2">{{.Name}}</caption>{{end}} {{/* Display table name if provided */}}
+                  <thead class="table-light">
+                    <tr>
+                      {{range .Headers}} {{/* Access Headers from the current table item */}}
+                      <th>{{.}}</th>
+                      {{end}}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {{range .Rows}} {{/* Access Rows from the current table item */}}
+                    <tr>
+                      {{range .}}
+                      <td>{{.}}</td>
+                      {{end}}
+                    </tr>
+                    {{end}}
+                  </tbody>
+                </table>
+              </div>
+            </div> {{/* End container for each table */}}
+            {{end}} {{/* End range .Tables */}}
+            {{end}}
+
+            {{if .Charts}}
+              {{range .Charts}}
+              <div class="chart-container mb-3 d-flex flex-column" id="chart-container-{{.ChartID}}">
+                {{/* Title for the chart will be handled by data-chart-title if .Title is available */}}
+                <div class="chart-wrapper flex-grow-1" style="position: relative;">
+                    <canvas id="chart-{{.ChartID}}" class="chart-canvas"
+                            data-chart-type="{{.Type}}"
+                            data-chart-data='{{.DatasetsJSON}}' {{/* This should be the full 'data' object for Chart.js */}}
+                            data-chart-options='{{.OptionsJSON}}'
+                            style="min-height: 300px;"></canvas>
+                </div>
+              </div>
+              {{end}}
+            {{end}}
+
+            {{if and (not .Cards) (not .Tables) (not .Charts)}} {{/* Updated to check .Tables and .Charts */}}
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle me-2"></i>此模块没有可显示的数据。
+            </div>
+            {{end}}
+          </div>
+        </div>
+      </section>
+      {{end}}
+
+      <!-- 底部版权信息 -->
+      <footer class="col-12 text-center text-muted small mt-5 py-3 border-top">
+        <p class="mb-0">© {{.CopyrightYear}} GoodwaysIT. All rights reserved.</p>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<script src="/static/js/language.js"></script>
+<script>
+  // 在DOM内容加载完成后运行
+  document.addEventListener('DOMContentLoaded', function() {
+    // 尝试从URL获取reportId参数
+    const urlParams = new URLSearchParams(window.location.search);
+    const reportId = urlParams.get('id');
+    console.log('Report ID from URL:', reportId);
+    
+    if (reportId) {
+      // 页面已经通过后端渲染，不需要再次加载数据
+      console.log('Report page loaded with ID:', reportId);
+    } else {
+      // 如果没有reportId，显示错误信息
+      console.error('No report ID found in URL parameters');
+      document.body.innerHTML = '<div class="alert alert-danger m-4">错误：未提供报告ID</div>';
+    }
+    
+    // 获取localStorage中存储的语言设置
+    const lang = window.languageModule.getCurrentLang();
+    console.log('Report language setting:', lang);
+    
+    // 设置html的lang属性
+    document.documentElement.lang = lang;
+    
+    // 确保所有的data-lang-key元素都被更新
+    setTimeout(function() {
+      window.languageModule.updateTexts(lang);
+      console.log('Language texts updated to:', lang);
+      
+      // 启用调试选项，检查是否所有元素都已更新
+      const elements = document.querySelectorAll('[data-lang-key]');
+      elements.forEach(el => {
+        const key = el.getAttribute('data-lang-key');
+        console.log(`Element with key '${key}': current text = '${el.textContent}'`);
+      });
+    }, 100); // 稍作延迟，确保 DOM 完全准备好
+  });
+  
+  // 检查页面内容
+  window.addEventListener('load', function() {
+    // 检查页面内容是否为JSON字符串
+    const bodyText = document.body.textContent.trim();
+    if (bodyText.startsWith('{') && bodyText.endsWith('}')) {
+      try {
+        const jsonData = JSON.parse(bodyText);
+        console.log('Detected JSON response instead of HTML:', jsonData);
+        
+        if (jsonData.reportId) {
+          // 清除页面内容并显示加载提示
+          document.body.innerHTML = '<div class="d-flex justify-content-center mt-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">加载中...</span></div></div><p class="text-center mt-3">正在加载报告数据...</p>';
+          
+          // 使用reportId重新加载报告页面
+          window.location.href = `/report.html?id=${jsonData.reportId}`;
+        }
+      } catch (e) {
+        console.log('Body content is not valid JSON');
+      }
+    }
+  });
+</script>
+
+<!-- 导出报告模块 -->
+<script src="/static/js/report-exporter.js"></script>
+{{end}}

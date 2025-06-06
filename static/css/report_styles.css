@@ -1,0 +1,321 @@
+  /* 全局样式 - 使用专业的配色和字体 */
+  :root {
+    --sidebar-width: 280px;  /* 侧边栏宽度 */
+    --header-height: 60px;   /* 顶部栏高度 */
+    --primary-blue: #1a73e8;  /* 主色调 - 更专业的蓝色 */
+    --secondary-blue: #e8f0fe; /* 次色调 - 浅蓝色背景 */
+    --text-primary: #202124;  /* 主文本颜色 */
+    --text-secondary: #5f6368; /* 次要文本颜色 */
+    --border-color: #dadce0;  /* 边框颜色 */
+    --card-shadow: 0 2px 6px rgba(60, 64, 67, 0.15); /* 卡片阴影 */
+  }
+  
+  body {
+    background-color: #f5f7fa; /* 更细腻的背景色 */
+    font-family: 'Roboto', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: var(--text-primary);
+    line-height: 1.5;
+    font-size: 14px; /* DBA喜欢的紧凑字体大小 */
+  }
+  
+  /* 侧边栏样式 - 优化导航体验 */
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    z-index: 100;
+    border-right: 1px solid var(--border-color);
+    padding-top: 0; /* 移除顶部的多余空白 */
+    /* 添加滑动条样式 */
+    scrollbar-width: thin;
+    scrollbar-color: #dadce0 #f5f7fa;
+  }
+  
+  .sidebar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .sidebar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .sidebar::-webkit-scrollbar-thumb {
+    background-color: #dadce0;
+    border-radius: 3px;
+  }
+  
+  /* 侧边栏顶部模块 - 增加风格化的标题区 */
+  .sidebar-header {
+    padding: 12px 16px;
+    background-color: var(--primary-blue);
+    color: white;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  
+  /* 侧边栏导航链接 - 优化点击区域和视觉反馈 */
+  .sidebar .nav-link {
+    font-weight: 500;
+    color: var(--text-primary);
+    border-radius: 0;  /* 移除圆角，更专业 */
+    margin: 2px 0;    /* 减少间距 */
+    padding: 8px 16px; /* 缩小内边距 */
+    transition: all 0.15s ease-in-out;
+    border-left: 3px solid transparent; /* 为激活状态准备 */
+  }
+  
+  .sidebar .nav-link .bi {
+    margin-right: 8px;
+    color: var(--text-secondary);
+    font-size: 16px; /* 增大图标尺寸 */
+    width: 20px;    /* 固定宽度使图标对齐 */
+    text-align: center;
+  }
+  
+  /* 激活状态 - 使用左侧边框标记，类似于很多DBA工具 */
+  .sidebar .nav-link.active {
+    color: var(--primary-blue);
+    background-color: var(--secondary-blue);
+    border-left-color: var(--primary-blue);
+    font-weight: 500;
+  }
+  
+  .sidebar .nav-link:hover {
+    background-color: rgba(0,0,0,0.03);
+  }
+  
+  .sidebar .nav-link:hover .bi,
+  .sidebar .nav-link.active .bi {
+    color: var(--primary-blue);
+  }
+  
+  .sidebar-heading {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  
+  /* 内容区域样式 */
+  .report-section {
+    display: none; /* 默认隐藏，由JS控制显示 */
+  }
+
+  /* 内容区域标题 */
+  .content-header {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 24px;
+  }
+
+  main.col-lg-10 {
+    height: 100vh; 
+    overflow-y: auto;
+  }
+  
+  .content-header h1 {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .content-header .badge {
+    font-weight: 500;
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+  
+  /* 主要信息卡片样式 - 更加专业的设计 */
+  .main-info-card {
+    border-radius: 4px;
+    border: none;
+    transition: all 0.2s ease;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+  }
+  
+  .main-info-card .card-header {
+    background-color: #f5f7fa;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 500;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: var(--text-primary);
+  }
+  
+  .main-info-card .card-body {
+    padding: 16px;
+  }
+  
+  .main-info-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* 数据库指标卡片 */
+  .metric-card {
+    text-align: center;
+    background: white;
+    padding: 16px;
+    border-radius: 4px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 16px;
+  }
+  
+  .metric-card .metric-title {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+  
+  .metric-card .metric-value {
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--primary-blue);
+  }
+  
+  .metric-card .metric-unit {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  
+  /* 数据表格样式 - DBA喜欢的紧凑表格 */
+  .table-container {
+    background-color: #ffffff;
+    border-radius: 4px;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .table-header {
+    background-color: #f5f7fa;
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 16px;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--text-primary);
+  }
+  
+  .table-responsive {
+    max-height: 400px; /* 限制表格最大高度，超出则滚动 */
+  }
+  
+  .table {
+    font-size: 13px; /* 表格字体更小 */
+    margin-bottom: 0; /* 移除表格底部外边距 */
+  }
+  
+  .table th, .table td {
+    padding: 8px 12px; /* 减小单元格内边距 */
+    vertical-align: middle;
+  }
+  
+  .table thead th {
+    background-color: #f8f9fa;
+    border-bottom-width: 1px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  
+  .table-hover tbody tr:hover {
+    background-color: var(--secondary-blue);
+  }
+  
+  .table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(0,0,0,0.02);
+  }
+  
+  /* 紧凑模式下的表格样式 */
+  body.compact-mode .table {
+    font-size: 12px;
+  }
+  body.compact-mode .table th, 
+  body.compact-mode .table td {
+    padding: 4px 8px;
+  }
+
+  /* 按钮样式 */
+  .btn-custom {
+    background-color: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: white;
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  .btn-custom:hover {
+    background-color: #1669cf; /* 鼠标悬停时颜色变深 */
+    border-color: #1669cf;
+    color: white;
+  }
+  .btn-outline-custom {
+    color: var(--primary-blue);
+    border-color: var(--primary-blue);
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  .btn-outline-custom:hover {
+    background-color: var(--secondary-blue);
+    color: var(--primary-blue);
+  }
+
+  /* 图表容器 */
+  .chart-container {
+    position: relative;
+    height: 300px; /* 默认图表高度 */
+    width: 100%;
+    background-color: #ffffff;
+    padding: 16px;
+    border-radius: 4px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 24px;
+  }
+
+  /* 报告概览卡片 */
+  .overview-card {
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    text-decoration: none;
+    color: var(--text-primary);
+  }
+  .overview-card:hover {
+    box-shadow: var(--card-shadow);
+    transform: translateY(-2px);
+    color: var(--primary-blue);
+  }
+  .overview-card .icon {
+    font-size: 20px; /* 调整图标大小 */
+    margin-right: 12px;
+    color: var(--primary-blue);
+    width: 24px; /* 固定图标宽度 */
+    text-align: center;
+  }
+  .overview-card .title {
+    font-weight: 500;
+    font-size: 14px;
+  }
+  /* 响应式调整 */
+  @media (max-width: 768px) {
+    .sidebar {
+      position: static;
+      height: auto;
+      box-shadow: none;
+      border-right: none;
+      border-bottom: 1px solid var(--border-color);
+    }
+    main.col-lg-10 {
+      height: auto; 
+      overflow-y: visible;
+    }
+    .content-header h1 {
+      font-size: 18px;
+    }
+  }

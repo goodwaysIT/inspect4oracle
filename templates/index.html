@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oracle Database Inspection</title>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/fonts/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container">
+        <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+        <div class="text-center mb-3">
+            <h4 class="fw-bold mb-2" data-lang-key="title">Oracle数据库巡检</h4>
+        </div>
+        <div class="card shadow-sm">
+            <div class="card-body p-3">
+                <form id="inspection-form" method="POST" action="/api/inspect" class="small">
+    <input type="hidden" id="lang" name="lang" value="zh">
+    <div class="mb-2">
+        <label for="business" class="form-label mb-1" data-lang-key="business">数据库业务名称</label>
+        <input type="text" class="form-control form-control-sm" id="business" name="business" required placeholder="请输入业务名称" data-lang-key="business_placeholder">
+    </div>
+    <div class="row mb-2 g-2">
+        <div class="col-12 col-md-5">
+            <label for="host" class="form-label mb-1" data-lang-key="host">地址</label>
+            <input type="text" class="form-control form-control-sm" id="host" name="host" required placeholder="127.0.0.1">
+        </div>
+        <div class="col-6 col-md-3">
+            <label for="port" class="form-label mb-1" data-lang-key="port">端口</label>
+            <input type="text" class="form-control form-control-sm" id="port" name="port" value="1521" required>
+        </div>
+        <div class="col-6 col-md-4">
+            <label for="service" class="form-label mb-1" data-lang-key="service">服务名/SID</label>
+            <input type="text" class="form-control form-control-sm" id="service" name="service" required>
+        </div>
+    </div>
+    <div class="row mb-2 g-2">
+        <div class="col-6">
+            <label for="username" class="form-label mb-1" data-lang-key="username">用户名</label>
+            <input type="text" class="form-control form-control-sm" id="username" name="username" required>
+        </div>
+        <div class="col-6">
+            <label for="password" class="form-label mb-1" data-lang-key="password">密码</label>
+            <div class="input-group input-group-sm">
+                <input type="password" class="form-control" id="password" name="password" required>
+                <span class="input-group-text" id="togglePassword" style="cursor:pointer">
+                    <i class="bi bi-eye"></i>
+                </span>
+            </div>
+        </div>
+    </div>
+                    <div class="card mb-3">
+  <div class="card-header d-flex align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#inspection-items" aria-expanded="true">
+    <span class="fw-bold" data-lang-key="inspection_items">巡检项</span>
+    <span class="ms-auto"><i class="bi bi-chevron-down"></i></span>
+  </div>
+  <div class="collapse show" id="inspection-items">
+    <div class="card-body">
+      <div class="row row-cols-4 g-2">
+        <div class="col">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="items" value="dbinfo" id="dbinfo" checked disabled>
+            <label class="form-check-label" for="dbinfo" data-lang-key="dbinfo">基本信息</label>
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="items" value="storage" id="storage">
+            <label class="form-check-label" for="storage" data-lang-key="storage">存储</label>
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="items" value="params" id="params">
+            <label class="form-check-label" for="params" data-lang-key="params">参数</label>
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="items" value="sessions" id="sessions">
+            <label class="form-check-label" for="sessions" data-lang-key="sessions">会话</label>
+          </div>
+        </div>
+      </div>
+      <div class="row row-cols-4 g-2">
+        <div class="col">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="items" value="backup" id="backup">
+            <label class="form-check-label" for="backup" data-lang-key="backup">备份恢复</label>
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="items" value="security" id="security">
+            <label class="form-check-label" for="security" data-lang-key="security">安全</label>
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="items" value="objects" id="objects">
+            <label class="form-check-label" for="objects" data-lang-key="objects">对象</label>
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="items" value="performance" id="performance">
+            <label class="form-check-label" for="performance" data-lang-key="performance">性能</label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+  #inspection-items .form-check {
+    margin-bottom: 0.2rem;
+  }
+  #inspection-items .card-body {
+    padding: 0.5rem 1rem;
+  }
+</style>
+                    <div class="mb-2">
+                        <label class="form-label fw-bold" data-lang-key="output_lang">输出语言</label>
+                        <div class="d-flex align-items-center">
+                            <div class="form-check me-3">
+                                <input class="form-check-input" type="radio" name="lang" id="lang_zh" value="zh" checked>
+                                <label class="form-check-label" for="lang_zh">中文</label>
+                            </div>
+                            <div class="form-check me-3">
+                                <input class="form-check-input" type="radio" name="lang" id="lang_en" value="en">
+                                <label class="form-check-label" for="lang_en">English</label>
+                            </div>
+                            <div class="form-check me-3">
+                                <input class="form-check-input" type="radio" name="lang" id="lang_jp" value="jp" disabled>
+                                <label class="form-check-label" for="lang_jp">日本語</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <button type="button" id="validateBtn" class="btn btn-outline-secondary px-3 py-1 fw-bold small" data-lang-key="validate_only">验证连接</button>
+                        <button type="submit" class="btn btn-dark px-4 py-1 fw-bold small" data-lang-key="submit">巡检提交</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- 检查记录卡片区块，初始隐藏，固定在底部 -->
+        <div class="card shadow-sm d-none" id="inspection-log-card" style="position: fixed; bottom: 0; left: 0; width: 100%; z-index: 1000; max-height: 200px; overflow-y: auto; border-top: 1px solid #dee2e6; border-radius: 0;">
+            <div class="card-header bg-white border-0 pb-0">
+                <span class="fw-bold" data-lang-key="inspection_log">检查记录</span>
+            </div>
+            <div class="card-body p-3">
+                <div id="inspection-log-content" class="small" style="min-height:60px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<footer class="footer mt-auto py-3">
+    <div class="container text-center">
+        <span class="text-muted me-3">&copy; 2025 GoodwaysIT</span>
+        <a href="https://www.github.com/goodwaysIT/inspect4oracle" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-muted">
+            <i class="bi bi-github"></i> GitHub
+        </a>
+    </div>
+</footer>
+    </div>
+    
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="/static/libs/bootstrap.bundle.min.js"></script>
+    
+    <!-- Application Scripts -->
+    <script src="/static/js/language.js"></script>
+    <script src="/static/js/form-handler.js"></script>
+    
+    <!-- 初始化语言模块 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化语言模块
+            window.languageModule.init();
+            
+            // 获取选中的语言
+            const selectedLang = document.querySelector('input[name="lang"]:checked').value;
+            if (selectedLang) {
+                // 根据所选语言更新文本
+                updateTexts(selectedLang);
+            }
+            
+            // 语言切换监听器
+            document.querySelectorAll('input[name="lang"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    updateTexts(this.value);
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
