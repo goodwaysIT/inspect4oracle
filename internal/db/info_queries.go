@@ -39,9 +39,9 @@ type DatabaseDetail struct {
 	FlashbackOn          string         `json:"flashback_on" db:"FLASHBACK_ON"`
 	PlatformName         string         `json:"platform_name" db:"PLATFORM_NAME"`
 	DBUniqueName         sql.NullString `json:"db_unique_name" db:"DB_UNIQUE_NAME"`
-	CharacterSet         sql.NullString `json:"character_set" db:"CHARACTER_SET"`                     // For 12c+
+	CharacterSet         sql.NullString `json:"character_set" db:"CHARACTER_SET"`                   // For 12c+
 	NationalCharacterSet sql.NullString `json:"national_character_set" db:"NATIONAL_CHARACTER_SET"` // For 12c+
-	OverallVersion       string         `json:"overall_version"`                                   // Version string from instance, used for logic
+	OverallVersion       string         `json:"overall_version"`                                    // Version string from instance, used for logic
 }
 
 // FullDBInfo encapsulates all collected database and instance information.
@@ -84,7 +84,7 @@ FROM gv$instance ORDER BY instance_number`
 
 	// Query 2: Get database details (v$database and NLS parameters)
 	var dbDetailQuery string
-	// Ensure column aliases in the query match struct field names (case-insensitively) 
+	// Ensure column aliases in the query match struct field names (case-insensitively)
 	// or are handled by struct tags if ExecuteQueryAndScanToStructs is enhanced to use them.
 	if majorVersion >= 12 {
 		dbDetailQuery = `
@@ -123,7 +123,7 @@ FROM v$database`
 		// Return partial info. The DatabaseDetail struct will have zero values.
 		// Consider if this state warrants an error or just a warning and partial data.
 		// For consistency with original logic (which returned fullInfo and nil error on sql.ErrNoRows for this part):
-		return &fullInfo, nil 
+		return &fullInfo, nil
 	}
 
 	return &fullInfo, nil

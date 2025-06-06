@@ -97,7 +97,7 @@ func ViewReportHandler(content embed.FS) http.HandlerFunc {
 
 		templateData := map[string]interface{}{
 			"DbInfo":         reportData.BusinessName, // 使用业务名称
-			"ActualDBName":   reportData.DBName,     // 如果需要在模板其他地方显示实际数据库名，可以添加这个
+			"ActualDBName":   reportData.DBName,       // 如果需要在模板其他地方显示实际数据库名，可以添加这个
 			"DbConnection":   reportData.DBConnection,
 			"GeneratedAt":    reportData.GeneratedAt,
 			"Modules":        reportData.Modules,
@@ -315,6 +315,7 @@ func InspectHandler(debug bool) http.HandlerFunc {
 			Title:          "Oracle Database Inspection Report", // 考虑使用 businessNameFromRequest 作为标题的一部分
 			BusinessName:   businessNameFromRequest,
 			DBName:         fullDBInfo.Database.Name.String, // 实际数据库名
+			DBFullInfo:     dbInfoStr,             // 数据库完整信息
 			DBConnection:   dbConnectionStr,
 			GeneratedAt:    time.Now().Format("2006-01-02 15:04:05"),
 			Modules:        modules,

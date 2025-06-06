@@ -114,15 +114,15 @@ LEFT JOIN V$PARAMETER p ON p.NAME = 'db_flashback_retention_target'`
 
 // RecycleBinObjectInfo 存储回收站中的对象信息。
 type RecycleBinObjectInfo struct {
-	Owner        string       `json:"owner"`
-	ObjectName   string       `json:"object_name"`
-	OriginalName string       `json:"original_name"`
-	Type         string       `json:"type"`
-	TsName       string       `json:"ts_name"`
+	Owner        string         `json:"owner"`
+	ObjectName   string         `json:"object_name"`
+	OriginalName string         `json:"original_name"`
+	Type         string         `json:"type"`
+	TsName       string         `json:"ts_name"`
 	Createtime   sql.NullString `json:"createtime"`
 	Droptime     sql.NullString `json:"droptime"`
-	Space        int64        `json:"space"` // Blocks
-	CanUndrop    string       `json:"can_undrop"`
+	Space        int64          `json:"space"` // Blocks
+	CanUndrop    string         `json:"can_undrop"`
 }
 
 // GetRecycleBinObjects 获取回收站中的对象 (仅可恢复的)。

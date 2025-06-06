@@ -29,9 +29,13 @@
 
 ## 📸 界面截图
 
+清晰的数据库连接界面：
 ![连接界面截图](./assets/images/connection_ui_zh.png)
+直观的巡检报告概览：
 ![报告概览截图](./assets/images/report_overview_zh.png)
+丰富的交互式图表展示：
 ![图表示例截图](./assets/images/chart_example_zh.gif)
+灵活的巡检模块选择与报告生成：
 ![报告设置截图](./assets/images/report_settings_zh.png)
 
 ## 🚀 快速开始
@@ -45,12 +49,31 @@
 
 ### 2. 运行程序
 
-下载或构建完成后，直接运行可执行文件：
+您可以通过以下几种方式运行程序：
+
+*   **通过 `go run` (适用于已配置 Go 开发环境的场景)**:
+    ```bash
+    go run main.go
+    ```
+    (请将 `main.go` 替换为实际的项目入口文件名，如果它不同的话)
+
+*   **直接运行预编译的可执行文件**:
+    下载或构建完成后，直接运行可执行文件：
 
 *   **Windows**: 双击 `inspect4oracle.exe` 或在命令行运行 `inspect4oracle.exe`。
 *   **Linux / macOS**: 在终端运行 `./inspect4oracle`。
 
 程序启动后，会显示监听的 IP 地址和端口号，默认为 `http://0.0.0.0:8080`。
+
+    您可以通过 `-h` 或 `--help` 参数查看所有可用的命令行选项，例如：
+    ```bash
+    # Windows
+    inspect4oracle.exe -h
+
+    # Linux / macOS
+    ./inspect4oracle -h
+    ```
+    这将显示如何指定不同的监听端口、开启调试模式等。
 
 ### 3. 开始巡检
 
@@ -117,21 +140,9 @@ Inspect4Oracle 提供以下核心巡检模块 (部分模块可能仍在开发中
     *   提交您的更改，并推送到您的 Fork 仓库。
     *   创建一个 Pull Request (PR) 到主仓库的 `main` (或 `develop`) 分支，并详细描述您的更改内容。
 
-### 开发设置 (简要)
 
-*   安装 Go (最新稳定版)。
-*   Clone 您的 Fork 仓库到本地。
-*   (更多详细的开发环境设置和指南，请参考相关文档或咨询项目维护者。)
 
 ## 📜 开源许可
 
 本项目基于 [MIT License](LICENSE) 开源。
 
-## 🙏 致谢 (可选)
-
-*   感谢所有为本项目提供灵感和支持的开源社区和工具。
-*   (可以列出一些关键的依赖库，如果它们有特殊要求的话)
-
----
-
-希望这份 `README-zh.md` 能帮助您的项目吸引更多关注！

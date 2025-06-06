@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
-	"os" // Required for flag.Usage (os.Stderr, os.Args) and os.Exit
 	"net/http"
+	"os" // Required for flag.Usage (os.Stderr, os.Args) and os.Exit
 
 	"github.com/goodwaysIT/inspect4oracle/internal/handler"
 	"github.com/goodwaysIT/inspect4oracle/internal/logger"

@@ -32,6 +32,155 @@ var performanceChartColors = []chartColor{
 	{BorderColor: "#e83e8c", BackgroundColor: "rgba(232, 62, 140, 0.2)"},  // Pink
 }
 
+// processParametersModule handles the "parameters" inspection item.
+func processParametersModule(dbConn *sql.DB, lang string) (cards []ReportCard, tables []*ReportTable, charts []ReportChart, err error) {
+	params, dbErr := db.GetParameterList(dbConn)
+	if dbErr != nil {
+		cards = append(cards, ReportCard{Title: langText("错误", "Error", lang), Value: fmt.Sprintf(langText("获取参数失败: %v", "Failed to get parameters: %v", lang), dbErr)})
+		return cards, nil, nil, dbErr
+	}
+	logger.Debugf("获取到参数: %v", params)
+	if len(params) > 0 {
+		paramTable := &ReportTable{
+			Name:    langText("参数列表", "Parameter List", lang),
+			Headers: []string{langText("参数名", "Parameter Name", lang), langText("值", "Value", lang)},
+			Rows:    [][]string{},
+		}
+		for _, p := range params {
+			row := []string{p.Name, p.Value.String}
+			paramTable.Rows = append(paramTable.Rows, row)
+		}
+		tables = append(tables, paramTable)
+	}
+	return cards, tables, nil, nil
+}
+
+// processDbinfoModule handles the "dbinfo" inspection item.
+func processDbinfoModule(dbConn *sql.DB, lang string, preFetchedInfo *db.FullDBInfo) (cards []ReportCard, tables []*ReportTable, charts []ReportChart, err error) {
+	dbInfoToProcess := preFetchedInfo
+	var fetchErr error
+
+	if dbInfoToProcess == nil {
+		dbInfoToProcess, fetchErr = db.GetDatabaseInfo(dbConn)
+		if fetchErr != nil {
+			cards = append(cards, ReportCard{Title: langText("错误", "Error", lang), Value: fmt.Sprintf(langText("获取数据库信息失败: %v", "Failed to get database info: %v", lang), fetchErr)})
+			return cards, nil, nil, fetchErr
+		}
+	}
+
+	dbCards := []ReportCard{
+		{Title: langText("数据库名称", "DB Name", lang), Value: dbInfoToProcess.Database.Name.String},
+		{Title: langText("DBID", "DBID", lang), Value: formatNullInt64(dbInfoToProcess.Database.DBID)},
+		{Title: langText("创建时间", "Created", lang), Value: dbInfoToProcess.Database.Created.String},
+		{Title: langText("版本", "Overall Version", lang), Value: dbInfoToProcess.Database.OverallVersion},
+		{Title: langText("日志模式", "Log Mode", lang), Value: dbInfoToProcess.Database.LogMode},
+		{Title: langText("打开模式", "Open Mode", lang), Value: dbInfoToProcess.Database.OpenMode},
+		{Title: langText("容器数据库", "CDB", lang), Value: dbInfoToProcess.Database.CDB.String},
+		{Title: langText("保护模式", "Protection Mode", lang), Value: dbInfoToProcess.Database.ProtectionMode},
+		{Title: langText("闪回", "Flashback", lang), Value: dbInfoToProcess.Database.FlashbackOn},
+		{Title: langText("强制日志", "Force Logging", lang), Value: dbInfoToProcess.Database.ForceLogging.String},
+		{Title: langText("角色", "DB Role", lang), Value: dbInfoToProcess.Database.DatabaseRole},
+		{Title: langText("平台名称", "Platform Name", lang), Value: dbInfoToProcess.Database.PlatformName},
+		{Title: langText("数据库唯一名称", "DB Unique Name", lang), Value: dbInfoToProcess.Database.DBUniqueName.String},
+		{Title: langText("字符集", "Character Set", lang), Value: dbInfoToProcess.Database.CharacterSet.String},
+		{Title: langText("全国字符集", "National Character Set", lang), Value: dbInfoToProcess.Database.NationalCharacterSet.String},
+	}
+	cards = append(cards, dbCards...)
+
+	if len(dbInfoToProcess.Instances) > 0 {
+		instanceTable := &ReportTable{
+			Name:    langText("实例详情", "Instance Details", lang),
+			Headers: []string{langText("实例号", "Inst ID", lang), langText("实例名", "Instance Name", lang), langText("主机名", "Host Name", lang), langText("版本", "Version", lang), langText("启动时间", "Startup Time", lang), langText("状态", "Status", lang)},
+			Rows:    [][]string{},
+		}
+		for _, inst := range dbInfoToProcess.Instances {
+			row := []string{
+				strconv.Itoa(inst.InstanceNumber),
+				inst.InstanceName,
+				inst.HostName,
+				inst.Version,
+				inst.StartupTime,
+				inst.Status,
+			}
+			instanceTable.Rows = append(instanceTable.Rows, row)
+		}
+		tables = append(tables, instanceTable)
+	}
+	return cards, tables, nil, nil
+}
+
+// processStorageModule handles the "storage" inspection item.
+func processStorageModule(dbConn *sql.DB, lang string) (cards []ReportCard, tables []*ReportTable, charts []ReportChart, err error) {
+	storageData, dbErr := db.GetStorageInfo(dbConn)
+	if dbErr != nil {
+		cards = append(cards, ReportCard{Title: langText("错误", "Error", lang), Value: fmt.Sprintf(langText("获取存储信息失败: %v", "Failed to get storage info: %v", lang), dbErr)})
+		return cards, nil, nil, dbErr
+	}
+
+	if len(storageData.ControlFiles) > 0 {
+		cfTable := &ReportTable{
+			Name:    langText("控制文件", "Control Files", lang),
+			Headers: []string{langText("文件路径", "File Path", lang), langText("大小(MB)", "Size(MB)", lang)},
+			Rows:    [][]string{},
+		}
+		for _, cf := range storageData.ControlFiles {
+			row := []string{cf.Name, fmt.Sprintf("%.2f", cf.SizeMB)}
+			cfTable.Rows = append(cfTable.Rows, row)
+		}
+		tables = append(tables, cfTable)
+	} else {
+		cards = append(cards, ReportCard{Title: langText("控制文件", "Control Files", lang), Value: langText("未找到", "Not Found", lang)})
+	}
+
+	if len(storageData.RedoLogs) > 0 {
+		redoTable := &ReportTable{
+			Name:    langText("Redo 日志组", "Redo Log Groups", lang),
+			Headers: []string{langText("组号", "Group#", lang), langText("线程号", "Thread#", lang), langText("成员数", "Members", lang), langText("大小(MB)", "Size(MB)", lang), langText("文件", "Members", lang), langText("状态", "Status", lang), langText("归档", "Archived", lang), langText("类型", "Type", lang)},
+			Rows:    [][]string{},
+		}
+		for _, rl := range storageData.RedoLogs {
+			row := []string{
+				strconv.Itoa(rl.GroupNo),
+				strconv.Itoa(rl.ThreadNo),
+				strconv.Itoa(rl.Members),
+				fmt.Sprintf("%.2f", rl.SizeMB),
+				rl.Member,
+				rl.Status,
+				rl.Archived,
+				rl.Type,
+			}
+			redoTable.Rows = append(redoTable.Rows, row)
+		}
+		tables = append(tables, redoTable)
+	}
+
+	if len(storageData.Tablespaces) > 0 {
+		tsTable := &ReportTable{
+			Name:    langText("表空间使用情况", "Tablespace Usage", lang),
+			Headers: []string{langText("状态", "Status", lang), langText("表空间名称", "Tablespace", lang), langText("类型", "Type", lang), langText("extent管理", "Extent Management", lang), langText("segment管理", "Segment Management", lang), langText("已用(MB)", "Used(MB)", lang), langText("总量(MB)", "Total(MB)", lang), langText("使用率(%)", "Used %", lang), langText("可扩展大小(MB)", "Autoextend Size(MB)", lang)},
+			Rows:    [][]string{},
+		}
+		for _, ts := range storageData.Tablespaces {
+			row := []string{
+				ts.Status,
+				ts.Name,
+				ts.Type,
+				ts.ExtentManagement,
+				ts.SegmentSpaceManagement,
+				fmt.Sprintf("%.2f", ts.UsedMB),
+				fmt.Sprintf("%.2f", ts.TotalMB),
+				ts.UsedPercent,
+				fmt.Sprintf("%.2f", ts.CanExtendMB),
+			}
+			tsTable.Rows = append(tsTable.Rows, row)
+		}
+		tables = append(tables, tsTable)
+	}
+	// Note: The original code for ASM Disk Groups and Datafile IO stats was not fully visible in the snippet.
+	// If those sections exist, they should also be part of this helper or their own helpers.
+	return cards, tables, charts, nil
+}
+
 // ProcessInspectionItem 处理单个巡检项并返回报告模块。
 // fullDBInfo 参数包含了从 dbinfo 模块预先获取的数据库的全面信息，供其他模块参考。
 // 如果 fullDBInfo 为 nil (例如，在获取 dbinfo 本身时发生错误)，函数仍会尝试处理，但依赖 fullDBInfo 的模块可能会受影响。
@@ -42,164 +191,37 @@ func ProcessInspectionItem(item string, dbConn *sql.DB, lang string, fullDBInfo 
 	// 各个 case 中需要妥善处理 fullDBInfo 可能为 nil 的情况
 
 	switch item {
-	case "params", "parameters": // 同时支持 params 和 parameters 两种名称
+	case "params", "parameters":
 		module.Name = langText("数据库参数", "Key Database Parameters", lang)
-		params, err := db.GetParameterList(dbConn) // GetOracleParams 应该在 db 包中定义
+		cards, tables, _, err := processParametersModule(dbConn, lang)
+		module.Cards = append(module.Cards, cards...)
+		module.Tables = append(module.Tables, tables...)
 		if err != nil {
-			module.Cards = []ReportCard{{Title: langText("错误", "Error", lang), Value: fmt.Sprintf(langText("获取参数失败: %v", "Failed to get parameters: %v", lang), err)}}
-			return module, err
-		}
-		logger.Debugf("获取到参数: %v", params)
-		if len(params) > 0 {
-			paramTable := &ReportTable{
-				Name:    langText("参数列表", "Parameter List", lang),
-				Headers: []string{langText("参数名", "Parameter Name", lang), langText("值", "Value", lang)},
-				Rows:    [][]string{},
-			}
-			for _, p := range params {
-				row := []string{p.Name, p.Value.String}
-				paramTable.Rows = append(paramTable.Rows, row)
-			}
-			module.Tables = append(module.Tables, paramTable)
+			module.Error = err.Error() // Store error message in module
+			// The error card is already added by the helper function.
+			return module, err // Return error for logging/handling by caller
 		}
 
 	case "dbinfo":
 		module.Name = langText("基本信息", "Basic Info", lang)
-		dbInfoToProcess := fullDBInfo // 使用预先获取的 fullDBInfo
-		var err error
-
-		// 如果预获取的 fullDBInfo 为 nil (例如，在 InspectHandler 中获取失败)
-		// 或者当前项就是 dbinfo 但 fullDBInfo 由于某种原因仍未初始化（理论上不应发生，因为 dbinfo 是第一个处理的）
-		// 则尝试再次获取。
-		if dbInfoToProcess == nil {
-			dbInfoToProcess, err = db.GetDatabaseInfo(dbConn)
-			if err != nil {
-				module.Cards = []ReportCard{{Title: langText("错误", "Error", lang), Value: fmt.Sprintf(langText("获取数据库信息失败: %v", "Failed to get database info: %v", lang), err)}}
-				return module, err // 返回错误，以便上层记录
-			}
-		}
-
-		// Database Details for Cards
-		dbCards := []ReportCard{
-			{Title: langText("数据库名称", "DB Name", lang), Value: dbInfoToProcess.Database.Name.String},
-			{Title: langText("DBID", "DBID", lang), Value: formatNullInt64(dbInfoToProcess.Database.DBID)},
-			{Title: langText("创建时间", "Created", lang), Value: dbInfoToProcess.Database.Created.String},
-			{Title: langText("版本", "Overall Version", lang), Value: dbInfoToProcess.Database.OverallVersion},
-			{Title: langText("日志模式", "Log Mode", lang), Value: dbInfoToProcess.Database.LogMode},
-			{Title: langText("打开模式", "Open Mode", lang), Value: dbInfoToProcess.Database.OpenMode},
-			{Title: langText("容器数据库", "CDB", lang), Value: dbInfoToProcess.Database.CDB.String},
-			{Title: langText("保护模式", "Protection Mode", lang), Value: dbInfoToProcess.Database.ProtectionMode},
-			{Title: langText("闪回", "Flashback", lang), Value: dbInfoToProcess.Database.FlashbackOn},
-			{Title: langText("强制日志", "Force Logging", lang), Value: dbInfoToProcess.Database.ForceLogging.String},
-			{Title: langText("角色", "DB Role", lang), Value: dbInfoToProcess.Database.DatabaseRole},
-			{Title: langText("平台名称", "Platform Name", lang), Value: dbInfoToProcess.Database.PlatformName},
-			{Title: langText("数据库唯一名称", "DB Unique Name", lang), Value: dbInfoToProcess.Database.DBUniqueName.String},
-			{Title: langText("字符集", "Character Set", lang), Value: dbInfoToProcess.Database.CharacterSet.String},
-			{Title: langText("全国字符集", "National Character Set", lang), Value: dbInfoToProcess.Database.NationalCharacterSet.String},
-		}
-		module.Cards = dbCards
-
-		// Instance Details for Table
-		if len(dbInfoToProcess.Instances) > 0 {
-			instanceTable := &ReportTable{
-				Name:    langText("实例详情", "Instance Details", lang),
-				Headers: []string{langText("实例号", "Inst ID", lang), langText("实例名", "Instance Name", lang), langText("主机名", "Host Name", lang), langText("版本", "Version", lang), langText("启动时间", "Startup Time", lang), langText("状态", "Status", lang)},
-				Rows:    [][]string{},
-			}
-			for _, inst := range dbInfoToProcess.Instances {
-				row := []string{
-					strconv.Itoa(inst.InstanceNumber),
-					inst.InstanceName,
-					inst.HostName,
-					inst.Version,
-					inst.StartupTime,
-					inst.Status,
-				}
-				instanceTable.Rows = append(instanceTable.Rows, row)
-			}
-			module.Tables = append(module.Tables, instanceTable) // 添加到表格列表
+		cards, tables, _, err := processDbinfoModule(dbConn, lang, fullDBInfo)
+		module.Cards = append(module.Cards, cards...)
+		module.Tables = append(module.Tables, tables...)
+		if err != nil {
+			module.Error = err.Error()
+			return module, err
 		}
 
 	case "storage":
 		module.Name = langText("存储信息", "Storage Info", lang)
-
-		storageData, err := db.GetStorageInfo(dbConn)
+		cards, tables, charts, err := processStorageModule(dbConn, lang)
+		module.Cards = append(module.Cards, cards...)
+		module.Tables = append(module.Tables, tables...)
+		module.Charts = append(module.Charts, charts...)
 		if err != nil {
-			module.Cards = []ReportCard{{Title: langText("错误", "Error", lang), Value: fmt.Sprintf(langText("获取存储信息失败: %v", "Failed to get storage info: %v", lang), err)}}
+			module.Error = err.Error()
 			return module, err
-		}
-
-		// 控制文件表格
-		if len(storageData.ControlFiles) > 0 {
-			// 创建控制文件表格
-			cfTable := &ReportTable{
-				Name:    langText("控制文件", "Control Files", lang),
-				Headers: []string{langText("文件路径", "File Path", lang), langText("大小(MB)", "Size(MB)", lang)},
-				Rows:    [][]string{},
-			}
-
-			// 添加每个控制文件信息到表格行
-			for _, cf := range storageData.ControlFiles {
-				row := []string{
-					cf.Name,
-					fmt.Sprintf("%.2f", cf.SizeMB),
-				}
-				cfTable.Rows = append(cfTable.Rows, row)
-			}
-
-			// 将控制文件表格添加到模块表格列表
-			module.Tables = append(module.Tables, cfTable)
-
-			// 添加一个汇总卡片
-			// module.Cards = append(module.Cards, ReportCard{Title: langText("控制文件数", "Control File Count", lang), Value: fmt.Sprintf("%d", len(storageData.ControlFiles))})
-		} else {
-			// 如果没有控制文件，添加一个提示卡片
-			module.Cards = append(module.Cards, ReportCard{Title: langText("控制文件", "Control Files", lang), Value: langText("未找到", "Not Found", lang)})
-		}
-
-		// Redo 日志表格
-		if len(storageData.RedoLogs) > 0 {
-			redoTable := &ReportTable{
-				Name:    langText("Redo 日志组", "Redo Log Groups", lang),
-				Headers: []string{langText("组号", "Group#", lang), langText("线程号", "Thread#", lang), langText("成员数", "Members", lang), langText("大小(MB)", "Size(MB)", lang), langText("文件", "Members", lang), langText("状态", "Status", lang), langText("归档", "Archived", lang), langText("类型", "Type", lang)},
-				Rows:    [][]string{},
-			}
-			for _, rl := range storageData.RedoLogs {
-				row := []string{
-					strconv.Itoa(rl.GroupNo),
-					strconv.Itoa(rl.ThreadNo),
-					strconv.Itoa(rl.Members),
-					fmt.Sprintf("%.2f", rl.SizeMB),
-					rl.Member,
-					rl.Status,
-					rl.Archived,
-					rl.Type,
-				}
-				redoTable.Rows = append(redoTable.Rows, row)
-			}
-			module.Tables = append(module.Tables, redoTable)
-		}
-
-		// 表空间使用情况表格
-		if len(storageData.Tablespaces) > 0 {
-			tsTable := &ReportTable{
-				Name:    langText("表空间使用情况", "Tablespace Usage", lang),
-				Headers: []string{langText("状态", "Status", lang), langText("表空间名称", "Tablespace", lang), langText("类型", "Type", lang), langText("extent管理", "Extent Management", lang), langText("segment管理", "Segment Management", lang), langText("已用(MB)", "Used(MB)", lang), langText("总量(MB)", "Total(MB)", lang), langText("使用率(%)", "Used %", lang), langText("可扩展大小(MB)", "Autoextend Size(MB)", lang)},
-				Rows:    [][]string{},
-			}
-			for _, ts := range storageData.Tablespaces {
-				row := []string{
-					ts.Status,
-					ts.Name,
-					ts.Type,
-					ts.ExtentManagement,
-					ts.SegmentSpaceManagement,
-					fmt.Sprintf("%.2f", ts.UsedMB),
-					fmt.Sprintf("%.2f", ts.TotalMB),
-					ts.UsedPercent,
-					fmt.Sprintf("%.2f", ts.CanExtendMB),
-				}
-				tsTable.Rows = append(tsTable.Rows, row)
+		}				tsTable.Rows = append(tsTable.Rows, row)
 			}
 			module.Tables = append(module.Tables, tsTable)
 		}

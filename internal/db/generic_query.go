@@ -126,7 +126,7 @@ func ExecuteQueryAndScanToStructs(db *sql.DB, destSlice interface{}, query strin
 	for rows.Next() {
 		// Create a new instance of the struct type (e.g., a new MyStruct)
 		newStructPtr := reflect.New(structType) // This is a pointer to the new struct (*MyStruct)
-		newStructVal := newStructPtr.Elem()      // This is the struct value itself (MyStruct)
+		newStructVal := newStructPtr.Elem()     // This is the struct value itself (MyStruct)
 
 		scanDest := make([]interface{}, len(columns))
 		for i, colName := range columns {
@@ -134,7 +134,7 @@ func ExecuteQueryAndScanToStructs(db *sql.DB, destSlice interface{}, query strin
 			foundField := false
 			for j := 0; j < newStructVal.NumField(); j++ {
 				fieldDesc := structType.Field(j) // StructField descriptor
-				dbTag := fieldDesc.Tag.Get("db")   // Get the value of the "db" tag
+				dbTag := fieldDesc.Tag.Get("db") // Get the value of the "db" tag
 
 				matchedByTag := false
 				if dbTag != "" {
@@ -169,7 +169,7 @@ func ExecuteQueryAndScanToStructs(db *sql.DB, destSlice interface{}, query strin
 			}
 			if !foundField {
 				// If no matching field is found, scan into a dummy variable to avoid Scan error
-				scanDest[i] = new(interface{}) 
+				scanDest[i] = new(interface{})
 				logger.Debugf("列 '%s' 在目标结构体 '%s' 中没有匹配的字段，将扫描到临时变量", colName, structType.Name())
 			}
 		}

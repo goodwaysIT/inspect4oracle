@@ -12,10 +12,10 @@ type ReportCard struct {
 
 // ReportTable defines the structure for a table in a report.
 type ReportTable struct {
-	Name    string     `json:"name"`              // 表格名称
-	Headers []string   `json:"headers"`           // 表头
-	Rows    [][]string `json:"rows"`              // 表格数据行
-	Notes   string     `json:"notes,omitempty"`   // 表格的额外注释
+	Name    string     `json:"name"`            // 表格名称
+	Headers []string   `json:"headers"`         // 表头
+	Rows    [][]string `json:"rows"`            // 表格数据行
+	Notes   string     `json:"notes,omitempty"` // 表格的额外注释
 }
 
 // ChartDataPoint represents a single point in a chart.
@@ -52,14 +52,14 @@ type ChartTimeDisplayFormats struct {
 
 // ChartTimeScaleOptions defines options specific to a time scale.
 type ChartTimeScaleOptions struct {
-	Unit           string                   `json:"unit,omitempty"` // e.g., "day", "month", "year", "minute"
-	TooltipFormat  string                   `json:"tooltipFormat,omitempty"` // Format for the tooltip
+	Unit           string                   `json:"unit,omitempty"`           // e.g., "day", "month", "year", "minute"
+	TooltipFormat  string                   `json:"tooltipFormat,omitempty"`  // Format for the tooltip
 	DisplayFormats *ChartTimeDisplayFormats `json:"displayFormats,omitempty"` // Pointer to allow omission
 }
 
 // ChartScaleOptions defines options for an individual scale (axis).
 type ChartScaleOptions struct {
-	Type        string                 `json:"type,omitempty"` // e.g., "linear", "logarithmic", "category", "time"
+	Type        string                 `json:"type,omitempty"`    // e.g., "linear", "logarithmic", "category", "time"
 	Display     interface{}            `json:"display,omitempty"` // Can be bool or "auto"
 	BeginAtZero bool                   `json:"beginAtZero,omitempty"`
 	Title       ChartScaleTitleOptions `json:"title,omitempty"`
@@ -87,7 +87,7 @@ type ChartPluginLegendOptions struct {
 // ChartPluginTooltipOptions defines options for the chart tooltip plugin.
 type ChartPluginTooltipOptions struct {
 	Enabled   bool   `json:"enabled,omitempty"`
-	Mode      string `json:"mode,omitempty"`      // e.g., "index", "point", "nearest"
+	Mode      string `json:"mode,omitempty"` // e.g., "index", "point", "nearest"
 	Intersect bool   `json:"intersect,omitempty"`
 }
 
@@ -114,10 +114,10 @@ type ChartJSData struct {
 
 // ReportChart represents data and configuration for a single chart.
 type ReportChart struct {
-	ChartID      string         `json:"chartId"`
-	Type         string         `json:"type"` // e.g., "line", "bar"
-	DatasetsJSON template.HTML `json:"datasetsJson"` // JSON string for chart datasets
-	OptionsJSON  template.HTML `json:"optionsJson,omitempty"`  // JSON string for chart options
+	ChartID      string        `json:"chartId"`
+	Type         string        `json:"type"`                  // e.g., "line", "bar"
+	DatasetsJSON template.HTML `json:"datasetsJson"`          // JSON string for chart datasets
+	OptionsJSON  template.HTML `json:"optionsJson,omitempty"` // JSON string for chart options
 }
 
 // ReportModule defines the structure for a report module.
