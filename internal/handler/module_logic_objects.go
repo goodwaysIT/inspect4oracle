@@ -60,7 +60,7 @@ func processObjectsModule(dbConn *sql.DB, lang string) (cards []ReportCard, tabl
 		overallErr = appendError(overallErr, topSegmentsErr)
 	} else if allDbObjectInfo != nil && len(allDbObjectInfo.TopSegments) > 0 {
 		topSegmentsTable := &ReportTable{
-			Name:    langText("Top 段 (按大小)", "Top Segments (by Size)", lang),
+			Name: langText("Top 段 (按大小)", "Top Segments (by Size)", lang),
 			// TablespaceName is not available in db.TopSegment struct, so it's removed from headers.
 			Headers: []string{langText("所有者", "Owner", lang), langText("段名", "Segment Name", lang), langText("段类型", "Segment Type", lang), langText("大小 (GB)", "Size (GB)", lang)},
 			Rows:    [][]string{},

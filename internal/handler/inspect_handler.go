@@ -2,6 +2,8 @@ package handler
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
+	"database/sql"
 	"embed"
 	"encoding/base64"
 	"encoding/json"
@@ -138,6 +140,201 @@ type DBConnectionRequest struct {
 	Lang     string   `json:"lang"`
 }
 
+// parseInspectRequest 解析巡检请求中的参数
+// 它支持 JSON, x-www-form-urlencoded, 和 multipart/form-data 类型的请求
+// 返回 DBConnectionRequest 结构体和可能发生的错误
+func parseInspectRequest(r *http.Request) (*DBConnectionRequest, error) {
+	var req DBConnectionRequest
+
+	contentType := r.Header.Get("Content-Type")
+	if strings.HasPrefix(contentType, "application/json") {
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			logger.Error(fmt.Sprintf("解析 JSON 请求体失败: %v", err))
+			return nil, fmt.Errorf("无效的请求体: %w", err)
+		}
+	} else if strings.HasPrefix(contentType, "application/x-www-form-urlencoded") || strings.HasPrefix(contentType, "multipart/form-data") {
+		if strings.HasPrefix(contentType, "multipart/form-data") {
+			if err := r.ParseMultipartForm(32 << 20); err != nil { // 32MB 最大内存
+				logger.Error(fmt.Sprintf("解析 multipart 表单数据失败: %v", err))
+				return nil, fmt.Errorf("解析 multipart 表单数据失败: %w", err)
+			}
+		} else {
+			if err := r.ParseForm(); err != nil {
+				logger.Error(fmt.Sprintf("解析表单数据失败: %v", err))
+				return nil, fmt.Errorf("解析表单数据失败: %w", err)
+			}
+		}
+		req.Host = r.FormValue("host")
+		req.Port = r.FormValue("port")
+		req.Service = r.FormValue("service")
+		req.Username = r.FormValue("username")
+		req.Password = r.FormValue("password")
+		req.Lang = r.FormValue("lang")
+		req.Business = r.FormValue("business")
+
+		// 处理 items 参数，它可能以两种形式出现：
+		// 1. items=item1,item2,item3 (单个字符串，逗号分隔)
+		// 2. items=item1&items=item2&items=item3 (多个同名参数)
+		if r.Form["items"] != nil {
+			// 检查是否是单个逗号分隔的字符串
+			if len(r.Form["items"]) == 1 && strings.Contains(r.Form["items"][0], ",") {
+				req.Items = strings.Split(r.Form["items"][0], ",")
+			} else {
+				// 否则，视为多个同名参数
+				req.Items = r.Form["items"]
+			}
+		} else {
+			// 兼容旧的 items[] 写法，虽然标准做法是 items
+			formItems := r.Form["items[]"]
+			if len(formItems) > 0 {
+				req.Items = formItems
+			} else {
+				// 如果 items 和 items[] 都没有，则尝试从单个 item 字段获取（如果存在）
+				// 这主要为了兼容早期可能的错误表单提交方式
+				singleItem := r.FormValue("item")
+				if singleItem != "" {
+					req.Items = []string{singleItem}
+				}
+			}
+		}
+
+	} else {
+		logger.Error(fmt.Sprintf("不支持的 Content-Type: %s", contentType))
+		return nil, fmt.Errorf("不支持的 Content-Type: %s", contentType)
+	}
+	return &req, nil
+}
+
+// validateInspectParameters 校验巡检请求参数
+func validateInspectParameters(req *DBConnectionRequest) error {
+	if req.Host == "" || req.Port == "" || req.Service == "" || req.Username == "" {
+		return fmt.Errorf("主机、端口、服务名和用户名不能为空")
+	}
+	if len(req.Items) == 0 {
+		return fmt.Errorf("巡检项不能为空")
+	}
+	// 可以在这里添加更多校验逻辑，例如端口号格式等
+	return nil
+}
+
+// handleRequestValidation 解析并校验巡检请求
+func handleRequestValidation(r *http.Request) (*DBConnectionRequest, error) {
+	contentType := r.Header.Get("Content-Type")
+	logger.Infof("InspectHandler received request with Content-Type: %s", contentType)
+
+	req, err := parseInspectRequest(r)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse inspect request: %w", err)
+	}
+
+	logger.Infof("Parsed inspection request: Business='%s', Host='%s', Port='%s', Service='%s', Username='%s', ItemsCount=%d, Lang='%s'",
+		req.Business, req.Host, req.Port, req.Service, req.Username, len(req.Items), req.Lang)
+
+	if err := validateInspectParameters(req); err != nil {
+		return nil, fmt.Errorf("invalid parameters for request (Business='%s', Host='%s', Port='%s', Service='%s', Username='%s', ItemsCount=%d, Lang='%s'): %w",
+			req.Business, req.Host, req.Port, req.Service, req.Username, len(req.Items), req.Lang, err)
+	}
+	return req, nil
+}
+
+// establishDBConnection 建立数据库连接并获取基础信息
+func establishDBConnection(req *DBConnectionRequest) (*sql.DB, *db.FullDBInfo, error) {
+	portInt, convErr := strconv.Atoi(req.Port)
+	if convErr != nil {
+		return nil, nil, fmt.Errorf("invalid port number '%s': %w", req.Port, convErr)
+	}
+
+	dbConn, err := db.Connect(db.ConnectionDetails{
+		User:           req.Username,
+		Password:       req.Password, // 注意：这里仍然使用了 req.Password，实际应用中应考虑安全性
+		Host:           req.Host,
+		Port:           portInt,
+		DBName:         req.Service,
+		ConnectionType: "SERVICE_NAME",
+	})
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+
+	fullDBInfo, err := db.GetDatabaseInfo(dbConn)
+	if err != nil {
+		dbConn.Close() // Ensure connection is closed if GetDatabaseInfo fails
+		return nil, nil, fmt.Errorf("failed to get database info: %w", err)
+	}
+	return dbConn, fullDBInfo, nil
+}
+
+// processInspectionModules 处理所有选定的巡检模块
+func processInspectionModules(items []string, dbConn *sql.DB, lang string, fullDBInfo *db.FullDBInfo) []ReportModule {
+	var modules []ReportModule
+	for _, item := range items {
+		module, err := ProcessInspectionItem(item, dbConn, lang, fullDBInfo)
+		if err != nil {
+			logger.Error(fmt.Sprintf("处理巡检项 %s 时出错: %v", item, err))
+			module = ReportModule{
+				ID:   item,
+				Name: item,
+				Cards: []ReportCard{{
+					Title: "Error",
+					Value: fmt.Sprintf("处理巡检项时出错: %v", err),
+				}},
+			}
+		}
+		modules = append(modules, module)
+	}
+	return modules
+}
+
+// prepareReportData 准备报告的整体数据结构
+func prepareReportData(req *DBConnectionRequest, fullDBInfo *db.FullDBInfo, modules []ReportModule, lang string) (ReportData, string) {
+	reportSections := make([]ReportSection, 0, len(modules))
+	for _, module := range modules {
+		reportSections = append(reportSections, ReportSection{
+			ID:   module.ID,
+			Name: module.Name,
+		})
+	}
+
+	dbInfoStr := fmt.Sprintf("%s (v%s)", fullDBInfo.Database.Name.String, fullDBInfo.Database.OverallVersion)
+	if len(fullDBInfo.Instances) > 0 {
+		dbInfoStr += fmt.Sprintf(" @ %s", fullDBInfo.Instances[0].HostName)
+	}
+
+	dbConnectionStr := fmt.Sprintf("%s:%s/%s", req.Host, req.Port, req.Service)
+	reportID := generateReportID(req.Host, req.Port, req.Service)
+
+	reportData := ReportData{
+		Lang:           lang,
+		Title:          "Oracle Database Inspection Report",
+		BusinessName:   req.Business,
+		DBName:         fullDBInfo.Database.Name.String,
+		DBFullInfo:     dbInfoStr,
+		DBConnection:   dbConnectionStr,
+		GeneratedAt:    time.Now().Format("2006-01-02 15:04:05"),
+		Modules:        modules,
+		ReportSections: reportSections,
+	}
+	return reportData, reportID
+}
+
+// storeAndRespond 保存报告并发送HTTP响应
+func storeAndRespond(w http.ResponseWriter, reportID string, reportData ReportData) {
+	reportStoreMutex.Lock()
+	reportStore[reportID] = reportData
+	reportStoreMutex.Unlock()
+
+	response := map[string]interface{}{
+		"success":  true,
+		"reportId": reportID,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		logger.Error(fmt.Sprintf("Error encoding response: %v", err))
+		// If encoding fails, it's hard to send a meaningful HTTP error
+	}
+}
+
 // InspectHandler 处理巡检请求
 func InspectHandler(debug bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -146,195 +343,37 @@ func InspectHandler(debug bool) http.HandlerFunc {
 			return
 		}
 
-		// 记录请求头
-		headers, _ := json.Marshal(r.Header)
-		logger.Info(fmt.Sprintf("请求头: %s", string(headers)))
-
-		var (
-			host, port, service, username, password, lang string
-			businessNameFromRequest                       string // 用于存储从请求中获取的业务名称
-			items                                         []string
-		)
-
-		// 检查 Content-Type 头
-		contentType := r.Header.Get("Content-Type")
-		if contentType == "application/json" {
-			// 解析 JSON 请求体
-			var req DBConnectionRequest
-			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-				logger.Error(fmt.Sprintf("解析 JSON 请求体失败: %v", err))
-				http.Error(w, "Invalid request body", http.StatusBadRequest)
-				return
-			}
-			// 使用 JSON 数据
-			host = req.Host
-			port = req.Port
-			service = req.Service
-			username = req.Username
-			password = req.Password
-			items = req.Items
-			lang = req.Lang
-			businessNameFromRequest = req.Business
-		} else {
-			// 解析表单数据
-			if err := r.ParseForm(); err != nil {
-				logger.Error(fmt.Sprintf("解析表单数据失败: %v", err))
-				http.Error(w, "Failed to parse form data", http.StatusBadRequest)
-				return
-			}
-
-			// 如果是 multipart 表单，解析 multipart 数据
-			if strings.Contains(r.Header.Get("Content-Type"), "multipart/form-data") {
-				if err := r.ParseMultipartForm(32 << 20); err != nil { // 32MB 最大内存
-					logger.Error(fmt.Sprintf("解析 multipart 表单数据失败: %v", err))
-					http.Error(w, "Failed to parse multipart form data", http.StatusBadRequest)
-					return
-				}
-			}
-
-			// 获取表单数据
-			host = r.FormValue("host")
-			port = r.FormValue("port")
-			service = r.FormValue("service")
-			username = r.FormValue("username")
-			password = r.FormValue("password")
-			lang = r.FormValue("lang")
-			businessNameFromRequest = r.FormValue("business")
-
-			// 获取 items
-			// 首先尝试从 MultipartForm 获取
-			if r.MultipartForm != nil && r.MultipartForm.Value != nil {
-				if values, ok := r.MultipartForm.Value["items[]"]; ok && len(values) > 0 {
-					items = values
-				} else if values, ok := r.MultipartForm.Value["items"]; ok && len(values) > 0 {
-					items = values
-				}
-			}
-
-			// 如果 MultipartForm 中没有找到，尝试从 Form 获取
-			if len(items) == 0 {
-				if values, ok := r.Form["items[]"]; ok && len(values) > 0 {
-					items = values
-				} else if values, ok := r.Form["items"]; ok && len(values) > 0 {
-					items = values
-				}
-			}
-
-			// 记录接收到的 items 值
-			logger.Info(fmt.Sprintf("接收到的 items: %v", items))
-
-			// 记录接收到的数据
-			logger.Info(fmt.Sprintf("接收到的表单数据: host=%s, port=%s, service=%s, username=%s, password=%v, items=%v",
-				host, port, service, username, password != "", items))
-		}
-
-		// 验证必填字段
-		if host == "" || port == "" || service == "" || username == "" || password == "" || len(items) == 0 {
-			errMsg := fmt.Sprintf("Missing required fields: host=%s, port=%s, service=%s, username=%s, password=%v, items=%v",
-				host, port, service, username, password != "", items)
-			logger.Error(errMsg)
-			http.Error(w, errMsg, http.StatusBadRequest)
+		req, err := handleRequestValidation(r)
+		if err != nil {
+			logger.Error(fmt.Sprintf("API Error: %v", err))
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		// 构建连接详情
-		portInt, err := strconv.Atoi(port)
+		dbConn, fullDBInfo, err := establishDBConnection(req)
 		if err != nil {
-			http.Error(w, "Invalid port number", http.StatusBadRequest)
-			return
-		}
-
-		// 连接数据库
-		dbConn, err := db.Connect(db.ConnectionDetails{
-			User:           username,
-			Password:       password,
-			Host:           host,
-			Port:           portInt,
-			DBName:         service,
-			ConnectionType: "SERVICE_NAME",
-		})
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Failed to connect to database: %v", err), http.StatusInternalServerError)
+			logger.Error(fmt.Sprintf("API Error: %v", err))
+			http.Error(w, err.Error(), http.StatusInternalServerError) // Or appropriate status based on error type
 			return
 		}
 		defer func() {
-			if err := dbConn.Close(); err != nil {
-				logger.Error(fmt.Sprintf("Error closing database connection: %v", err))
+			if dbConn != nil {
+				if err := dbConn.Close(); err != nil {
+					logger.Error(fmt.Sprintf("Error closing database connection: %v", err))
+				}
 			}
 		}()
 
-		// 获取数据库信息
-		fullDBInfo, err := db.GetDatabaseInfo(dbConn)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Failed to get database info: %v", err), http.StatusInternalServerError)
-			return
-		}
-
-		// 处理选中的巡检项
-		var modules []ReportModule
-		for _, item := range items {
-			module, err := ProcessInspectionItem(item, dbConn, lang, fullDBInfo)
-			if err != nil {
-				logger.Error(fmt.Sprintf("处理巡检项 %s 时出错: %v", item, err))
-				// 添加错误信息到报告中，而不是直接跳过
-				module = ReportModule{
-					ID:   item,
-					Name: item,
-					Cards: []ReportCard{{ // Changed to ReportCard type
-						Title: "Error",
-						Value: fmt.Sprintf("处理巡检项时出错: %v", err),
-					}},
-				}
-			}
-			modules = append(modules, module)
-		}
-
-		// 生成报告ID
-		reportId := fmt.Sprintf("%s_%d", time.Now().Format("20060102150405"), time.Now().UnixNano()%1000)
-
-		// 准备报告数据
-		reportSections := make([]ReportSection, 0, len(modules))
-		for _, module := range modules {
-			reportSections = append(reportSections, ReportSection{
-				ID:   module.ID,
-				Name: module.Name,
-			})
-		}
-
-		// 构建更完整的数据库信息字符串
-		dbInfoStr := fmt.Sprintf("%s (v%s)", fullDBInfo.Database.Name.String, fullDBInfo.Database.OverallVersion)
-		if len(fullDBInfo.Instances) > 0 {
-			dbInfoStr += fmt.Sprintf(" @ %s", fullDBInfo.Instances[0].HostName)
-		}
-
-		// 构建数据库连接信息字符串
-		dbConnectionStr := fmt.Sprintf("%s:%s/%s", host, port, service)
-
-		reportData := ReportData{
-			Lang:           lang,
-			Title:          "Oracle Database Inspection Report", // 考虑使用 businessNameFromRequest 作为标题的一部分
-			BusinessName:   businessNameFromRequest,
-			DBName:         fullDBInfo.Database.Name.String, // 实际数据库名
-			DBFullInfo:     dbInfoStr,             // 数据库完整信息
-			DBConnection:   dbConnectionStr,
-			GeneratedAt:    time.Now().Format("2006-01-02 15:04:05"),
-			Modules:        modules,
-			ReportSections: reportSections,
-		}
-
-		// 保存报告数据到内存或数据库
-		reportStoreMutex.Lock()
-		reportStore[reportId] = reportData
-		reportStoreMutex.Unlock()
-
-		// 返回报告ID
-		response := map[string]interface{}{
-			"success":  true,
-			"reportId": reportId,
-		}
-
-		// 设置响应头
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		modules := processInspectionModules(req.Items, dbConn, req.Lang, fullDBInfo)
+		reportData, reportID := prepareReportData(req, fullDBInfo, modules, req.Lang)
+		storeAndRespond(w, reportID, reportData)
 	}
+}
+
+// generateReportID 根据输入参数生成一个唯一的报告ID
+func generateReportID(host, port, service string) string {
+	timestamp := time.Now().UnixNano()
+	data := fmt.Sprintf("%s-%s-%s-%d", host, port, service, timestamp)
+	hash := sha256.Sum256([]byte(data))
+	return fmt.Sprintf("%x", hash[:16]) // 使用哈希的前16字节作为ID，转换为十六进制字符串
 }

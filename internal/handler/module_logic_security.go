@@ -170,7 +170,6 @@ func processSecurityModule(dbConn *sql.DB, lang string, fullDBInfo *db.FullDBInf
 					langText("用户名", "Username", lang),
 					langText("授予的角色", "Granted Role", lang),
 					langText("Admin Option", "Admin Option", lang),
-					langText("Delegate Option", "Delegate Option", lang),
 				},
 				Rows: [][]string{},
 			}

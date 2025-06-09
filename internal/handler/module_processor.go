@@ -8,106 +8,151 @@ import (
 	"github.com/goodwaysIT/inspect4oracle/internal/logger"
 )
 
+// moduleProcessFunc defines the standard signature for all module processing functions.
+// They take a database connection, language, and pre-fetched full database info (which can be nil).
+// They return slices of report cards, tables, charts, and an error.
+type moduleProcessFunc func(dbConn *sql.DB, lang string, fullDBInfo *db.FullDBInfo) ([]ReportCard, []*ReportTable, []ReportChart, error)
+
+// Adapter for processParametersModule
+func adaptParametersModule(dbConn *sql.DB, lang string, _ *db.FullDBInfo) ([]ReportCard, []*ReportTable, []ReportChart, error) {
+	// Original processParametersModule doesn't expect fullDBInfo, so we ignore it here.
+	// It also returns a concrete []ReportChart which is usually nil for this module.
+	return processParametersModule(dbConn, lang)
+}
+
+// Adapter for processDbinfoModule - its signature is already compatible
+// func adaptDbinfoModule(dbConn *sql.DB, lang string, fullDBInfo *db.FullDBInfo) ([]ReportCard, []*ReportTable, []ReportChart, error) {
+// 	 return processDbinfoModule(dbConn, lang, fullDBInfo)
+// }
+
+// Adapter for processStorageModule (assuming original doesn't take fullDBInfo)
+func adaptStorageModule(dbConn *sql.DB, lang string, _ *db.FullDBInfo) ([]ReportCard, []*ReportTable, []ReportChart, error) {
+	return processStorageModule(dbConn, lang)
+}
+
+// Adapter for processSessionsModule (assuming original doesn't take fullDBInfo)
+func adaptSessionsModule(dbConn *sql.DB, lang string, _ *db.FullDBInfo) ([]ReportCard, []*ReportTable, []ReportChart, error) {
+	return processSessionsModule(dbConn, lang)
+}
+
+// Adapter for processObjectsModule
+func adaptObjectsModule(dbConn *sql.DB, lang string, _ *db.FullDBInfo) ([]ReportCard, []*ReportTable, []ReportChart, error) {
+	return processObjectsModule(dbConn, lang)
+}
+
+// Adapter for processPerformanceModule (assuming original doesn't take fullDBInfo)
+func adaptPerformanceModule(dbConn *sql.DB, lang string, _ *db.FullDBInfo) ([]ReportCard, []*ReportTable, []ReportChart, error) {
+	return processPerformanceModule(dbConn, lang)
+}
+
+// Adapter for processSecurityModule - its signature is already compatible
+// func adaptSecurityModule(dbConn *sql.DB, lang string, fullDBInfo *db.FullDBInfo) ([]ReportCard, []*ReportTable, []ReportChart, error) {
+// 	 return processSecurityModule(dbConn, lang, fullDBInfo)
+// }
+
+// Adapter for processBackupModule (assuming original doesn't take fullDBInfo)
+func adaptBackupModule(dbConn *sql.DB, lang string, _ *db.FullDBInfo) ([]ReportCard, []*ReportTable, []ReportChart, error) {
+	return processBackupModule(dbConn, lang)
+}
+
+// moduleInfo holds information about a module, including its name and processing function.
+// We use a struct to potentially extend this with more module-specific metadata later (e.g., icons, titles).
+type moduleInfo struct {
+	nameFunc  func(lang string) string
+	processor moduleProcessFunc
+	titleFunc func(lang string) string // Optional: for modules with specific titles
+	icon      string                   // Optional: for module icon
+}
+
+// moduleProcessors maps inspection item keys to their respective moduleInfo.
+var moduleProcessors = map[string]moduleInfo{
+	"params": {
+		nameFunc:  func(lang string) string { return langText("数据库参数", "Key Database Parameters", lang) },
+		processor: adaptParametersModule,
+	},
+	"parameters": { // Alias for params
+		nameFunc:  func(lang string) string { return langText("数据库参数", "Key Database Parameters", lang) },
+		processor: adaptParametersModule,
+	},
+	"dbinfo": {
+		nameFunc:  func(lang string) string { return langText("基本信息", "Basic Info", lang) },
+		processor: processDbinfoModule, // Assumes processDbinfoModule is compatible or adapted
+	},
+	"storage": {
+		nameFunc:  func(lang string) string { return langText("存储信息", "Storage Info", lang) },
+		processor: adaptStorageModule,
+	},
+	"sessions": {
+		nameFunc:  func(lang string) string { return langText("会话详情", "Session Details", lang) },
+		processor: adaptSessionsModule,
+	},
+	"objects": {
+		nameFunc: func(lang string) string { return langText("数据库对象", "Database Objects", lang) },
+		titleFunc: func(lang string) string {
+			return langText("数据库对象统计与状态", "Database Objects Statistics & Status", lang)
+		},
+		icon:      "fas fa-cube",
+		processor: adaptObjectsModule,
+	},
+	"performance": {
+		nameFunc:  func(lang string) string { return langText("数据库性能", "Database Performance", lang) },
+		processor: adaptPerformanceModule,
+	},
+	"security": {
+		nameFunc:  func(lang string) string { return langText("安全配置", "Security Configuration", lang) },
+		processor: processSecurityModule, // Assumes processSecurityModule is compatible or adapted
+	},
+	"backup": {
+		nameFunc:  func(lang string) string { return langText("备份与恢复", "Backup & Recovery", lang) },
+		processor: adaptBackupModule,
+	},
+}
+
 // ProcessInspectionItem 处理单个巡检项并返回报告模块。
 // fullDBInfo 参数包含了从 dbinfo 模块预先获取的数据库的全面信息，供其他模块参考。
 // 如果 fullDBInfo 为 nil (例如，在获取 dbinfo 本身时发生错误)，函数仍会尝试处理，但依赖 fullDBInfo 的模块可能会受影响。
 func ProcessInspectionItem(item string, dbConn *sql.DB, lang string, fullDBInfo *db.FullDBInfo) (ReportModule, error) {
-	module := ReportModule{ID: item, Cards: []ReportCard{}} // 初始化模块，ID为巡检项名称，Cards明确类型
+	module := ReportModule{ID: item, Cards: []ReportCard{}} // Initialize module
 
-	// 默认情况下，如果 fullDBInfo 为 nil，后续依赖它的模块可能会出错或显示不完整信息
-	// 各个 case 中需要妥善处理 fullDBInfo 可能为 nil 的情况
-
-	switch item {
-	case "params", "parameters":
-		module.Name = langText("数据库参数", "Key Database Parameters", lang)
-		cards, tables, _, err := processParametersModule(dbConn, lang)
-		module.Cards = append(module.Cards, cards...)
-		module.Tables = append(module.Tables, tables...)
-		if err != nil {
-			module.Error = err.Error() // Store error message in module
-			// The error card is already added by the helper function.
-			return module, err // Return error for logging/handling by caller
-		}
-
-	case "dbinfo":
-		module.Name = langText("基本信息", "Basic Info", lang)
-		cards, tables, _, err := processDbinfoModule(dbConn, lang, fullDBInfo)
-		module.Cards = append(module.Cards, cards...)
-		module.Tables = append(module.Tables, tables...)
-		if err != nil {
-			module.Error = err.Error()
-			return module, err
-		}
-
-	case "storage":
-		module.Name = langText("存储信息", "Storage Info", lang)
-		cards, tables, charts, err := processStorageModule(dbConn, lang)
-		module.Cards = append(module.Cards, cards...)
-		module.Tables = append(module.Tables, tables...)
-		module.Charts = append(module.Charts, charts...)
-		if err != nil {
-			module.Error = err.Error()
-			return module, err
-		}
-	case "sessions":
-		module.Name = langText("会话详情", "Session Details", lang)
-		cards, tables, charts, processErr := processSessionsModule(dbConn, lang)
-		module.Cards = append(module.Cards, cards...)
-		module.Tables = append(module.Tables, tables...)
-		module.Charts = append(module.Charts, charts...)
-		if processErr != nil {
-			module.Error = processErr.Error()
-			// Error card might already be added by processSessionsModule,
-			// but setting module.Error ensures it's reported.
-			// The caller of ProcessInspectionItem might still want to log processErr.
-		}
-	case "objects":
-		module.Name = langText("数据库对象", "Database Objects", lang)
-		module.Title = langText("数据库对象统计与状态", "Database Objects Statistics & Status", lang)
-		module.Icon = "fas fa-cube" // Example icon
-		cards, tables, _, processErr := processObjectsModule(dbConn, lang)
-		module.Cards = append(module.Cards, cards...)
-		module.Tables = append(module.Tables, tables...)
-		if processErr != nil {
-			module.Error = processErr.Error()
-		}
-	case "performance":
-		module.Name = langText("数据库性能", "Database Performance", lang)
-		cards, tables, charts, processErr := processPerformanceModule(dbConn, lang)
-		module.Cards = append(module.Cards, cards...)
-		module.Tables = append(module.Tables, tables...)
-		module.Charts = append(module.Charts, charts...)
-		if processErr != nil {
-			module.Error = processErr.Error()
-			// 如果 processPerformanceModule 返回错误，通常它内部已经记录并创建了相应的错误卡片
-			// 此处仅设置顶层模块错误状态
-		}
-	case "security":
-		module.Name = langText("安全配置", "Security Configuration", lang)
-		cards, tables, _, processErr := processSecurityModule(dbConn, lang, fullDBInfo) // charts is expected to be nil
-		module.Cards = append(module.Cards, cards...)
-		module.Tables = append(module.Tables, tables...)
-		// module.Charts will remain empty or nil as security module doesn't produce charts
-		if processErr != nil {
-			module.Error = processErr.Error()
-		}
-	case "backup":
-		module.Name = langText("备份与恢复", "Backup & Recovery", lang)
-		logger.Infof("开始委派处理备份模块...")
-		cards, tables, charts, err := processBackupModule(dbConn, lang)
-		module.Cards = append(module.Cards, cards...)
-		module.Tables = append(module.Tables, tables...)
-		module.Charts = append(module.Charts, charts...)
-		if err != nil {
-			logger.Errorf("备份模块处理返回错误: %v", err)
-			module.Error = err.Error()
-		}
-
-	default:
+	pInfo, ok := moduleProcessors[item]
+	if !ok {
 		module.Name = fmt.Sprintf(langText("未知模块: %s", "Unknown Module: %s", lang), item)
 		errMsg := fmt.Sprintf(langText("此模块 '%s' 的处理器未实现", "Handler for module '%s' is not implemented", lang), item)
 		module.Cards = []ReportCard{{Title: langText("错误", "Error", lang), Value: errMsg}}
-		return module, fmt.Errorf(errMsg) // 返回错误，以便上层记录
+		return module, fmt.Errorf(errMsg)
+	}
+
+	module.Name = pInfo.nameFunc(lang)
+	if pInfo.titleFunc != nil {
+		module.Title = pInfo.titleFunc(lang)
+	}
+	if pInfo.icon != "" {
+		module.Icon = pInfo.icon
+	}
+
+	// Log before calling the processor, especially for modules like backup that might take time
+	if item == "backup" { // Specific logging for backup or other long-running modules
+		logger.Infof("开始委派处理 %s 模块...", item)
+	}
+
+	cards, tables, charts, err := pInfo.processor(dbConn, lang, fullDBInfo)
+
+	module.Cards = append(module.Cards, cards...)
+	module.Tables = append(module.Tables, tables...)
+	module.Charts = append(module.Charts, charts...)
+
+	if err != nil {
+		logger.Errorf("%s 模块处理返回错误: %v", item, err) // Generic error logging
+		module.Error = err.Error()                  // Store error message in module
+		// Note: The individual processor or its adapter is responsible for adding specific error cards if needed.
+		// For critical errors that should halt further processing for this module, the processor should return the error.
+		// If the error is not nil, the caller (InspectHandler) might decide how to proceed globally.
+		// For some modules (like 'sessions', 'objects', 'performance', 'security' in the original switch),
+		// the error from the processor didn't cause an immediate return of (module, err) from ProcessInspectionItem.
+		// The new structure consistently sets module.Error. If a specific module's error should also be returned
+		// from ProcessInspectionItem (as was the case for 'params', 'dbinfo', 'storage'), the processor should ensure this.
+		// For now, we will return the error if it's not nil, mimicking the stricter cases.
+		return module, err
 	}
 
 	return module, nil

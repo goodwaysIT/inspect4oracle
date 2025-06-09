@@ -65,15 +65,15 @@
 
 程序启动后，会显示监听的 IP 地址和端口号，默认为 `http://0.0.0.0:8080`。
 
-    您可以通过 `-h` 或 `--help` 参数查看所有可用的命令行选项，例如：
-    ```bash
-    # Windows
-    inspect4oracle.exe -h
+您可以通过 `-h` 或 `--help` 参数查看所有可用的命令行选项，例如：
+```bash
+# Windows
+inspect4oracle.exe -h
 
-    # Linux / macOS
-    ./inspect4oracle -h
-    ```
-    这将显示如何指定不同的监听端口、开启调试模式等。
+# Linux / macOS
+./inspect4oracle -h
+```
+这将显示如何指定不同的监听端口、开启调试模式等。
 
 ### 3. 开始巡检
 
@@ -84,6 +84,47 @@
 5.  点击“开始巡检”按钮。
 6.  巡检完成后，系统将自动跳转到生成的巡检报告页面。
 7.  您可以浏览报告、与图表交互，并通过报告页面的导出功能将报告保存为 HTML 文件。
+
+> **注意**:
+> 为了获取最全面的巡检信息并确保所有模块都能正常工作，建议使用 `SYSTEM` 用户执行巡检。
+>
+> 如果您希望使用权限受限的普通用户执行巡检，请确保该用户已被授予访问相关数据字典视图和动态性能视图（如 `V$`视图、`DBA_`视图等）的必要查询权限。以下是根据程序内部权限校验列表生成的基础授权SQL脚本示例，您可以根据实际需要巡检的模块和数据库版本进行调整和补充：
+```sql
+-- 授予查询以下V$视图的权限:
+GRANT SELECT ON V_$ACTIVE_SESSION_HISTORY TO YOUR_USER;
+GRANT SELECT ON V_$ASM_DISKGROUP TO YOUR_USER; -- 如果使用ASM且需要检查
+GRANT SELECT ON V_$DATABASE TO YOUR_USER;
+GRANT SELECT ON V_$INSTANCE TO YOUR_USER;
+GRANT SELECT ON V_$SESSION TO YOUR_USER;
+GRANT SELECT ON V_$SQL TO YOUR_USER;
+GRANT SELECT ON V_$SQLAREA TO YOUR_USER;
+GRANT SELECT ON V_$SYSMETRIC TO YOUR_USER;
+GRANT SELECT ON V_$SYSTEM_PARAMETER TO YOUR_USER;
+GRANT SELECT ON V_$TEMP_EXTENT_POOL TO YOUR_USER;
+GRANT SELECT ON V_$VERSION TO YOUR_USER;
+
+-- 授予查询以下DBA_视图的权限:
+GRANT SELECT ON DBA_DATA_FILES TO YOUR_USER;
+GRANT SELECT ON DBA_FREE_SPACE TO YOUR_USER;
+GRANT SELECT ON DBA_OBJECTS TO YOUR_USER;
+GRANT SELECT ON DBA_ROLES TO YOUR_USER;
+GRANT SELECT ON DBA_ROLE_PRIVS TO YOUR_USER;
+GRANT SELECT ON DBA_SEGMENTS TO YOUR_USER;
+GRANT SELECT ON DBA_SYS_PRIVS TO YOUR_USER;
+GRANT SELECT ON DBA_TABLESPACES TO YOUR_USER;
+GRANT SELECT ON DBA_TEMP_FILES TO YOUR_USER;
+GRANT SELECT ON DBA_USERS TO YOUR_USER;
+
+-- 根据您启用的巡检模块，可能还需要其他权限，例如:
+-- GRANT SELECT ON V_$PARAMETER TO YOUR_USER; (替代 V_$SYSTEM_PARAMETER)
+-- GRANT SELECT ON DBA_PROFILES TO YOUR_USER; (安全模块)
+-- GRANT SELECT ON V_$RMAN_BACKUP_JOB_DETAILS TO YOUR_USER; (备份模块)
+-- GRANT SELECT ON V_$FLASHBACK_DATABASE_LOG TO YOUR_USER; (备份模块)
+-- GRANT SELECT ON DBA_RECYCLEBIN TO YOUR_USER; (备份模块)
+-- GRANT SELECT ON DBA_DATAPUMP_JOBS TO YOUR_USER; (备份模块)
+-- GRANT SELECT ON DBA_AUDIT_TRAIL TO YOUR_USER; (如果使用传统审计)
+-- ... 请根据实际巡检范围和错误日志补充更多权限 ...
+```
 
 ## 📦 核心巡检模块
 

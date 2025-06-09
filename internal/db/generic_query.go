@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/goodwaysIT/inspect4oracle/internal/logger" // 假设 logger 包路径
 	"reflect"
 	"strings"
+
+	"github.com/goodwaysIT/inspect4oracle/internal/logger" // 假设 logger 包路径
 )
 
 // ExecuteGenericQuery 执行一个通用的SQL查询并返回结果。
@@ -89,6 +90,47 @@ func ConvertRowToStruct(row map[string]interface{}, targetStruct interface{}) er
 	return fmt.Errorf("ConvertRowToStruct 功能受限，建议手动转换")
 }
 
+// findScanDestination attempts to find a matching field in a struct for a given column name.
+// It first checks for a 'db' tag on struct fields, then falls back to case-insensitive field name matching.
+// Returns the addressable interface of the field if found, and a boolean indicating success.
+func findScanDestination(colName string, structType reflect.Type, structVal reflect.Value) (interface{}, bool) {
+	upperColName := strings.ToUpper(colName)
+	for j := 0; j < structVal.NumField(); j++ {
+		fieldDesc := structType.Field(j) // StructField descriptor
+		dbTag := fieldDesc.Tag.Get("db") // Get the value of the "db" tag
+
+		matchedByTag := false
+		if dbTag != "" {
+			if strings.ToUpper(dbTag) == upperColName {
+				matchedByTag = true
+			}
+		}
+
+		matchedByName := false
+		if !matchedByTag { // Only try to match by name if not matched by tag
+			if strings.ToUpper(fieldDesc.Name) == upperColName {
+				matchedByName = true
+			}
+		}
+
+		if matchedByTag || matchedByName {
+			fieldVal := structVal.Field(j)
+			if fieldVal.CanAddr() {
+				// Log which way it was matched, for debugging
+				// if matchedByTag {
+				// 	logger.Debugf("列 '%s' 匹配到字段 '%s' 通过 db 标签 '%s'", colName, fieldDesc.Name, dbTag)
+				// } else {
+				// 	logger.Debugf("列 '%s' 匹配到字段 '%s' 通过字段名", colName, fieldDesc.Name)
+				// }
+				return fieldVal.Addr().Interface(), true
+			} else {
+				logger.Warnf("字段 '%s' (列 '%s') 不可寻址，跳过扫描此列", fieldDesc.Name, colName)
+			}
+		}
+	}
+	return new(interface{}), false // Return a dummy scan target if no field is found
+}
+
 // ExecuteQueryAndScanToStructs executes a query and scans the results directly into a slice of structs.
 // - db: The database connection.
 // - destSlice: A pointer to a slice of structs (e.g., *[]MyStruct) where results will be stored.
@@ -130,47 +172,11 @@ func ExecuteQueryAndScanToStructs(db *sql.DB, destSlice interface{}, query strin
 
 		scanDest := make([]interface{}, len(columns))
 		for i, colName := range columns {
-			upperColName := strings.ToUpper(colName)
-			foundField := false
-			for j := 0; j < newStructVal.NumField(); j++ {
-				fieldDesc := structType.Field(j) // StructField descriptor
-				dbTag := fieldDesc.Tag.Get("db") // Get the value of the "db" tag
-
-				matchedByTag := false
-				if dbTag != "" {
-					if strings.ToUpper(dbTag) == upperColName {
-						matchedByTag = true
-					}
-				}
-
-				matchedByName := false
-				if !matchedByTag { // Only try to match by name if not matched by tag
-					if strings.ToUpper(fieldDesc.Name) == upperColName {
-						matchedByName = true
-					}
-				}
-
-				if matchedByTag || matchedByName {
-					fieldVal := newStructVal.Field(j)
-					if fieldVal.CanAddr() {
-						scanDest[i] = fieldVal.Addr().Interface()
-						foundField = true
-						// Log which way it was matched, for debugging
-						// if matchedByTag {
-						// 	logger.Debugf("列 '%s' 匹配到字段 '%s' 通过 db 标签 '%s'", colName, fieldDesc.Name, dbTag)
-						// } else {
-						// 	logger.Debugf("列 '%s' 匹配到字段 '%s' 通过字段名", colName, fieldDesc.Name)
-						// }
-						break
-					} else {
-						logger.Warnf("字段 '%s' (列 '%s') 不可寻址，跳过扫描此列", fieldDesc.Name, colName)
-					}
-				}
-			}
+			var foundField bool
+			scanDest[i], foundField = findScanDestination(colName, structType, newStructVal)
 			if !foundField {
-				// If no matching field is found, scan into a dummy variable to avoid Scan error
-				scanDest[i] = new(interface{})
-				logger.Debugf("列 '%s' 在目标结构体 '%s' 中没有匹配的字段，将扫描到临时变量", colName, structType.Name())
+				logger.Debugf("列 '%s' 在目标结构体 '%s' 中没有匹配的字段或字段不可寻址，将扫描到临时变量", colName, structType.Name())
+				// findScanDestination already returns new(interface{}) in this case
 			}
 		}
 

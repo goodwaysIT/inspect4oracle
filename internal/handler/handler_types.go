@@ -2,7 +2,7 @@ package handler
 
 // ReportData 结构用于模板渲染
 type ReportData struct {
-	DBFullInfo     string         `json:"dbFullInfo,omitempty"` // 数据库完整信息，例如 "ORCL (v19.3.0.0.0) @ dbhost.example.com"
+	DBFullInfo     string          `json:"dbFullInfo,omitempty"` // 数据库完整信息，例如 "ORCL (v19.3.0.0.0) @ dbhost.example.com"
 	Lang           string          // 语言字段: "zh" 或 "en"
 	Title          string          // 报告主标题
 	BusinessName   string          // 用户输入的业务系统名称
