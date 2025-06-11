@@ -20,17 +20,17 @@
 
 *   **Linux / macOS**:
     ```bash
-    export VERSION_STRING="1.0.0"
+    export VERSION_STRING="0.1.0"
     # 或者从 Git 标签获取:
     # export VERSION_STRING=$(git describe --tags --always)
     ```
 *   **Windows (Command Prompt)**:
     ```cmd
-    set VERSION_STRING=1.0.0
+    set VERSION_STRING=0.1.0
     ```
 *   **Windows (PowerShell)**:
     ```powershell
-    $env:VERSION_STRING="1.0.0"
+    $env:VERSION_STRING="0.1.0"
     ```
 确保 `main.go` 文件中的 `AppVersion` 是一个**变量** (例如 `var AppVersion = "dev"`)，以便可以被链接器覆盖。
 

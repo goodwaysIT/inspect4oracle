@@ -1,3 +1,5 @@
+[English](README.md) | [日本語](README-ja.md) | [简体中文](README-zh.md)
+
 # Inspect4Oracle - Oracle 数据库巡检利器
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/goodwaysIT/inspect4oracle)](https://goreportcard.com/report/github.com/goodwaysIT/inspect4oracle)
