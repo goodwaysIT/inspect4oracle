@@ -48,7 +48,7 @@ func main() {
 
 	r := mux.NewRouter()
 
-	// 静态文件服务
+	// Static file serving
 	staticFS, err := fs.Sub(content, "static")
 	if err != nil {
 		log.Fatal(err)
@@ -67,14 +67,14 @@ func main() {
 	// 报告页面路由
 	r.HandleFunc("/report.html", handler.ViewReportHandler(content)).Methods("GET")
 
-	// 创建子路由用于 API
+	// Create a subrouter for the API
 	apiRouter := r.PathPrefix("/api").Subrouter()
 
 	// API 日志中间件
 	apiRouter.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			logger.Info(fmt.Sprintf("API 请求: %s %s", r.Method, r.URL.Path))
-			// 设置 CORS 头
+			logger.Info(fmt.Sprintf("API Request: %s %s", r.Method, r.URL.Path))
+			// Set CORS headers
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 			w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 			w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
@@ -91,17 +91,17 @@ func main() {
 	// 注册 API 路由
 	apiRouter.HandleFunc("/validate", handler.ValidateConnection).Methods("POST")
 	apiRouter.HandleFunc("/inspect", func(w http.ResponseWriter, r *http.Request) {
-		logger.Info("处理 /api/inspect 请求")
+		logger.Info("Handling /api/inspect request")
 		handler.InspectHandler(*debug)(w, r)
 	}).Methods("POST")
-	// 移除冲突的 /api/report 路由，因为它功能模糊且与 /report.html 重叠
+	// Remove conflicting /api/report route as its functionality is ambiguous and overlaps with /report.html
 	// apiRouter.HandleFunc("/report", handler.ViewReportHandler(content)).Methods("GET")
-	apiRouter.HandleFunc("/report/status", handler.GetReportStatusHandler()).Methods("GET") // 使用新的 GetReportStatusHandler 返回JSON
+	apiRouter.HandleFunc("/report/status", handler.GetReportStatusHandler()).Methods("GET") // Use the new GetReportStatusHandler to return JSON
 
-	// 主路由的日志中间件
+	// Logging middleware for the main router
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			logger.Info(fmt.Sprintf("页面请求: %s %s", r.Method, r.URL.Path))
+			logger.Info(fmt.Sprintf("Page Request: %s %s", r.Method, r.URL.Path))
 			next.ServeHTTP(w, r)
 		})
 	})

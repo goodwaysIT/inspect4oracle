@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// IndexHandler 处理主页请求
+// IndexHandler handles requests for the main page.
 func IndexHandler(content embed.FS) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// 创建一个新的模板集
@@ -24,7 +24,7 @@ func IndexHandler(content embed.FS) http.HandlerFunc {
 		// 解析模板
 		tmpl, err = tmpl.Parse(string(templateData))
 		if err != nil {
-			http.Error(w, "模板解析错误: "+err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Template parsing error: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -32,23 +32,23 @@ func IndexHandler(content embed.FS) http.HandlerFunc {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		err = tmpl.Execute(w, nil)
 		if err != nil {
-			http.Error(w, "模板执行错误: "+err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Template execution error: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
 }
 
-// ReportHandler 处理报告页面请求
+// ReportHandler handles requests for the report page.
 func ReportHandler(content embed.FS) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// 获取报告ID
+		// Get report ID
 		reportId := r.URL.Query().Get("id")
 		if reportId == "" {
 			http.Error(w, "Missing report ID", http.StatusBadRequest)
 			return
 		}
 
-		// 从 reportStore 中获取报告数据
+		// Get report data from reportStore
 		reportStoreMutex.RLock()
 		reportData, exists := reportStore[reportId]
 		reportStoreMutex.RUnlock()
@@ -71,7 +71,7 @@ func ReportHandler(content embed.FS) http.HandlerFunc {
 		// 解析模板
 		tmpl, err = tmpl.Parse(string(templateData))
 		if err != nil {
-			http.Error(w, "报告模板解析错误: "+err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Report template parsing error: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -86,7 +86,7 @@ func ReportHandler(content embed.FS) http.HandlerFunc {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		err = tmpl.Execute(w, templateDataMap)
 		if err != nil {
-			http.Error(w, "报告模板执行错误: "+err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Report template execution error: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}

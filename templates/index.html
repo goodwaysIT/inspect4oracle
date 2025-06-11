@@ -19,8 +19,8 @@
                 <form id="inspection-form" method="POST" action="/api/inspect" class="small">
     <input type="hidden" id="lang" name="lang" value="zh">
     <div class="mb-2">
-        <label for="business" class="form-label mb-1" data-lang-key="business">数据库业务名称</label>
-        <input type="text" class="form-control form-control-sm" id="business" name="business" required placeholder="请输入业务名称" data-lang-key="business_placeholder">
+        <label for="business" class="form-label mb-1" data-lang-key="business">Business Name</label>
+        <input type="text" class="form-control form-control-sm" id="business" name="business" required placeholder="Enter business name" data-lang-key="business_placeholder">
     </div>
     <div class="row mb-2 g-2">
         <div class="col-12 col-md-5">
@@ -32,13 +32,13 @@
             <input type="text" class="form-control form-control-sm" id="port" name="port" value="1521" required>
         </div>
         <div class="col-6 col-md-4">
-            <label for="service" class="form-label mb-1" data-lang-key="service">服务名/SID</label>
+            <label for="service" class="form-label mb-1" data-lang-key="service">Service Name/SID</label>
             <input type="text" class="form-control form-control-sm" id="service" name="service" required>
         </div>
     </div>
     <div class="row mb-2 g-2">
         <div class="col-6">
-            <label for="username" class="form-label mb-1" data-lang-key="username">用户名</label>
+            <label for="username" class="form-label mb-1" data-lang-key="username">Username</label>
             <input type="text" class="form-control form-control-sm" id="username" name="username" required>
         </div>
         <div class="col-6">
@@ -62,7 +62,7 @@
         <div class="col">
           <div class="form-check">
             <input class="form-check-input" type="checkbox" name="items" value="dbinfo" id="dbinfo" checked disabled>
-            <label class="form-check-label" for="dbinfo" data-lang-key="dbinfo">基本信息</label>
+            <label class="form-check-label" for="dbinfo" data-lang-key="dbinfo">Basic Info</label>
           </div>
         </div>
         <div class="col">
@@ -126,15 +126,15 @@
                         <div class="d-flex align-items-center">
                             <div class="form-check me-3">
                                 <input class="form-check-input" type="radio" name="lang" id="lang_zh" value="zh" checked>
-                                <label class="form-check-label" for="lang_zh">中文</label>
+                                <label class="form-check-label" for="lang_zh" data-lang-key="chinese">Chinese</label>
                             </div>
                             <div class="form-check me-3">
                                 <input class="form-check-input" type="radio" name="lang" id="lang_en" value="en">
-                                <label class="form-check-label" for="lang_en">English</label>
+                                <label class="form-check-label" for="lang_en" data-lang-key="english">English</label>
                             </div>
                             <div class="form-check me-3">
-                                <input class="form-check-input" type="radio" name="lang" id="lang_jp" value="jp" disabled>
-                                <label class="form-check-label" for="lang_jp">日本語</label>
+                                <input class="form-check-input" type="radio" name="lang" id="lang_jp" value="jp">
+                                <label class="form-check-label" for="lang_jp" data-lang-key="japanese">日本語</label>
                             </div>
                         </div>
                     </div>
@@ -179,10 +179,10 @@
             // 初始化语言模块
             window.languageModule.init();
             
-            // 获取选中的语言
+            // Get the selected language
             const selectedLang = document.querySelector('input[name="lang"]:checked').value;
             if (selectedLang) {
-                // 根据所选语言更新文本
+                // Update text based on selected language
                 updateTexts(selectedLang);
             }
             

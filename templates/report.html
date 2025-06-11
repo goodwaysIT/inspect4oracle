@@ -18,9 +18,9 @@
           </div>
       
       <div class="d-flex flex-column h-100">
-        <!-- 数据库基本信息 -->
+        <!-- Basic Database Information -->
         <div class="px-3 py-3">
-          <h6 class="sidebar-heading text-uppercase mb-2" data-lang-key="db_info">数据库信息</h6>
+          <h6 class="sidebar-heading text-uppercase mb-2" data-lang-key="db_info">DB Info</h6>
           <div class="db-info-container">
             <div class="d-flex align-items-center mb-2">
               <span class="badge bg-primary me-2">{{.DbVersion}}</span>
@@ -64,7 +64,7 @@
                 {{else if eq $module.ID "objects"}}<i class="bi bi-table"></i>
                 {{else if eq $module.ID "sessions"}}<i class="bi bi-people"></i>
                 {{else}}<i class="bi bi-file-earmark-text-fill"></i>{{end}}
-                {{$module.Name}}
+                <span data-lang-key="{{$module.ID}}">{{$module.Name}}</span>
               </a>
             </li>
             {{end}}
@@ -75,7 +75,7 @@
         <div class="mt-auto px-3 py-3 border-top">
           <div class="d-flex align-items-center mb-3">
             <i class="bi bi-palette me-2 text-secondary"></i>
-            <h6 class="sidebar-heading mb-0 text-uppercase" data-lang-key="report_settings">报告设置</h6>
+            <h6 class="sidebar-heading mb-0 text-uppercase" data-lang-key="report_settings">Report Settings</h6>
           </div>
           
           <!-- 风格选择区域 -->
@@ -131,7 +131,7 @@
                 <h5 class="card-title mb-0" data-lang-key="summary">巡检概要</h5>
               </div>
               <div class="card-body">
-                <p data-lang-key="summary_desc">本报告包含以下巡检模块的数据分析结果：</p>
+                <p data-lang-key="summary_desc">This report contains the data analysis results of the following inspection modules:</p>
                 <div class="row">
                   {{range $index, $module := .Modules}}
                   <div class="col-md-6 col-lg-4 mb-3">
@@ -147,7 +147,7 @@
                           {{else if eq $module.ID "objects"}}<i class="bi bi-table text-warning me-2"></i>
                           {{else if eq $module.ID "sessions"}}<i class="bi bi-people text-success me-2"></i>
                           {{else}}<i class="bi bi-file-earmark-text-fill text-secondary me-2"></i>{{end}}
-                          {{$module.Name}}
+                          <span data-lang-key="{{$module.ID}}">{{$module.Name}}</span>
                         </h5>
                         <a href="#" onclick="showSection('{{$module.ID}}', document.querySelector('.nav-link[data-section-id=\'{{$module.ID}}\']')); return false;" class="stretched-link"></a>
                       </div>
@@ -176,7 +176,7 @@
               {{else if eq .ID "objects"}}<i class="bi bi-table text-warning me-2"></i>
               {{else if eq .ID "sessions"}}<i class="bi bi-people text-success me-2"></i>
               {{else}}<i class="bi bi-file-earmark-text-fill text-secondary me-2"></i>{{end}}
-              {{.Name}}
+              <span data-lang-key="{{.ID}}">{{.Name}}</span>
             </h5>
           </div>
           <div class="card-body">
@@ -240,7 +240,7 @@
 
             {{if and (not .Cards) (not .Tables) (not .Charts)}} {{/* Updated to check .Tables and .Charts */}}
             <div class="alert alert-info">
-              <i class="bi bi-info-circle me-2"></i>此模块没有可显示的数据。
+              <i class="bi bi-info-circle me-2"></i>There is no data to display for this module.
             </div>
             {{end}}
           </div>
@@ -248,7 +248,7 @@
       </section>
       {{end}}
 
-      <!-- 底部版权信息 -->
+      <!-- Footer Copyright Information -->
       <footer class="col-12 text-center text-muted small mt-5 py-3 border-top">
         <p class="mb-0">© {{.CopyrightYear}} GoodwaysIT. All rights reserved.</p>
       </footer>
@@ -260,7 +260,7 @@
 <script>
   // 在DOM内容加载完成后运行
   document.addEventListener('DOMContentLoaded', function() {
-    // 尝试从URL获取reportId参数
+    // Try to get the reportId parameter from the URL
     const urlParams = new URLSearchParams(window.location.search);
     const reportId = urlParams.get('id');
     console.log('Report ID from URL:', reportId);
@@ -269,24 +269,24 @@
       // 页面已经通过后端渲染，不需要再次加载数据
       console.log('Report page loaded with ID:', reportId);
     } else {
-      // 如果没有reportId，显示错误信息
+      // If there is no reportId, display an error message
       console.error('No report ID found in URL parameters');
-      document.body.innerHTML = '<div class="alert alert-danger m-4">错误：未提供报告ID</div>';
+      document.body.innerHTML = '<div class="alert alert-danger m-4">Error: Report ID not provided</div>';
     }
     
-    // 获取localStorage中存储的语言设置
+    // Get the language setting stored in localStorage
     const lang = window.languageModule.getCurrentLang();
     console.log('Report language setting:', lang);
     
-    // 设置html的lang属性
+    // Set the lang attribute of the html element
     document.documentElement.lang = lang;
     
-    // 确保所有的data-lang-key元素都被更新
+    // Ensure all data-lang-key elements are updated
     setTimeout(function() {
       window.languageModule.updateTexts(lang);
       console.log('Language texts updated to:', lang);
       
-      // 启用调试选项，检查是否所有元素都已更新
+      // Enable debug option to check if all elements are updated
       const elements = document.querySelectorAll('[data-lang-key]');
       elements.forEach(el => {
         const key = el.getAttribute('data-lang-key');
@@ -308,7 +308,7 @@
           // 清除页面内容并显示加载提示
           document.body.innerHTML = '<div class="d-flex justify-content-center mt-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">加载中...</span></div></div><p class="text-center mt-3">正在加载报告数据...</p>';
           
-          // 使用reportId重新加载报告页面
+          // Reload the report page using the reportId
           window.location.href = `/report.html?id=${jsonData.reportId}`;
         }
       } catch (e) {

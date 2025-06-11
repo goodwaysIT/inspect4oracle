@@ -8,7 +8,7 @@ import (
 	"github.com/goodwaysIT/inspect4oracle/internal/logger"
 )
 
-// NonSystemUserInfo 包含从DBA_USERS查询的非系统用户信息
+// NonSystemUserInfo contains information about non-system users queried from DBA_USERS
 type NonSystemUserInfo struct {
 	Username            string       `json:"username"`
 	AccountStatus       string       `json:"account_status"`
@@ -18,10 +18,10 @@ type NonSystemUserInfo struct {
 	TemporaryTablespace string       `json:"temporary_tablespace"`
 	Profile             string       `json:"profile"`
 	Created             time.Time    `json:"created"`
-	LastLogin           sql.NullTime `json:"last_login"` // 注意：DBA_USERS.LAST_LOGIN 可能不被所有版本或配置填充
+	LastLogin           sql.NullTime `json:"last_login"` // Note: DBA_USERS.LAST_LOGIN may not be populated in all versions or configurations
 }
 
-// GetNonSystemUsers 获取所有非系统用户的信息
+// GetNonSystemUsers gets information for all non-system users
 func GetNonSystemUsers(db *sql.DB) ([]NonSystemUserInfo, error) {
 	query := `
 SELECT 
@@ -36,7 +36,7 @@ SELECT
     LAST_LOGIN AS LastLogin
 FROM DBA_USERS
 WHERE (ORACLE_MAINTAINED = 'N' OR ORACLE_MAINTAINED IS NULL) AND USERNAME NOT IN (
-    -- 常见的已知非应用账户，可以根据实际情况调整
+    -- Common known non-application accounts, can be adjusted according to the actual situation
     'ANONYMOUS', 'APEX_PUBLIC_USER', 'AUDSYS', 'BI', 'CTXSYS', 'DBSFWUSER', 
     'DBSNMP', 'DIP', 'DMSYS', 'DVF', 'DVSYS', 'EXFSYS', 'FLOWS_FILES', 
     'GGSYS', 'GSMADMIN_INTERNAL', 'GSMCATUSER', 'GSMUSER', 'HR', 'IX', 'LBACSYS', 
@@ -47,28 +47,28 @@ WHERE (ORACLE_MAINTAINED = 'N' OR ORACLE_MAINTAINED IS NULL) AND USERNAME NOT IN
     'SYSTEM', 'SYS', 'TSMSYS', 'WKPROXY', 'WMSYS', 'XDB', 'XS$NULL'
 )
 ORDER BY USERNAME`
-	// 注意: ORACLE_MAINTAINED = 'N' 是12c及以后版本区分用户是否为Oracle内部维护的一个好方法。
-	// 对于更早的版本，可能需要依赖一个更长的硬编码排除列表。
-	// (ORACLE_MAINTAINED IS NULL) 是为了兼容可能不存在该列的更早版本，或者该列值为NULL的情况。
+	// Note: ORACLE_MAINTAINED = 'N' is a good way to distinguish whether a user is maintained by Oracle internally in 12c and later versions.
+	// For earlier versions, a longer hard-coded exclusion list may be required.
+	// (ORACLE_MAINTAINED IS NULL) is for compatibility with earlier versions where this column may not exist, or where the column value is NULL.
 
 	var users []NonSystemUserInfo
-	// 假设 ExecuteQueryAndScanToStructs 能够处理 sql.NullTime 和 time.Time
+	// Assume ExecuteQueryAndScanToStructs can handle sql.NullTime and time.Time
 	err := ExecuteQueryAndScanToStructs(db, &users, query)
 	if err != nil {
-		return nil, fmt.Errorf("获取非系统用户信息失败: %w", err)
+		return nil, fmt.Errorf("failed to get non-system user info: %w", err)
 	}
-	logger.Infof("成功获取 %d 个非系统用户信息。", len(users))
+	logger.Infof("Successfully fetched info for %d non-system users.", len(users))
 	return users, nil
 }
 
-// ProfileInfo 包含 Profile 的配置信息，特别是密码相关参数
+// ProfileInfo contains profile configuration information, especially password-related parameters
 type ProfileInfo struct {
 	Profile      string `json:"profile"`
 	ResourceName string `json:"resource_name"`
 	Limit        string `json:"limit"`
 }
 
-// GetProfiles 获取 Profile 配置信息 (重点关注密码策略和 DEFAULT profile)
+// GetProfiles gets profile configuration information (focusing on password policies and the DEFAULT profile)
 func GetProfiles(db *sql.DB) ([]ProfileInfo, error) {
 	query := `
 SELECT 
@@ -76,26 +76,26 @@ SELECT
     RESOURCE_NAME AS ResourceName, 
     LIMIT AS Limit
 FROM DBA_PROFILES
-WHERE PROFILE != 'DEFAULT'  -- 所有用户自定义 Profile 的所有设置
-   OR (PROFILE = 'DEFAULT' AND RESOURCE_TYPE = 'PASSWORD') -- 以及 DEFAULT Profile 的密码相关设置
+WHERE PROFILE != 'DEFAULT'  -- All settings for all user-defined Profiles
+   OR (PROFILE = 'DEFAULT' AND RESOURCE_TYPE = 'PASSWORD') -- And password-related settings for the DEFAULT Profile
 ORDER BY PROFILE, RESOURCE_NAME`
 
 	var profiles []ProfileInfo
 	err := ExecuteQueryAndScanToStructs(db, &profiles, query)
 	if err != nil {
-		return nil, fmt.Errorf("获取 Profile 配置信息失败: %w", err)
+		return nil, fmt.Errorf("failed to get profile configuration info: %w", err)
 	}
-	logger.Infof("成功获取 %d 条 Profile 配置信息。", len(profiles))
+	logger.Infof("Successfully fetched %d profile configuration entries.", len(profiles))
 	return profiles, nil
 }
 
-// NonSystemRoleInfo 包含非系统角色的信息
+// NonSystemRoleInfo contains information about non-system roles
 type NonSystemRoleInfo struct {
 	RoleName           string `json:"role_name"`
 	AuthenticationType string `json:"authentication_type"` // NONE, PASSWORD, EXTERNAL, GLOBAL
 }
 
-// GetNonSystemRoles 获取所有非 Oracle 维护的角色
+// GetNonSystemRoles gets all roles not maintained by Oracle
 func GetNonSystemRoles(db *sql.DB) ([]NonSystemRoleInfo, error) {
 	query := `
 SELECT ROLE AS RoleName, AUTHENTICATION_TYPE
@@ -106,21 +106,21 @@ ORDER BY ROLE`
 	var roles []NonSystemRoleInfo
 	err := ExecuteQueryAndScanToStructs(db, &roles, query)
 	if err != nil {
-		return nil, fmt.Errorf("获取非系统角色列表失败: %w", err)
+		return nil, fmt.Errorf("failed to get non-system role list: %w", err)
 	}
-	logger.Infof("成功获取 %d 个非系统角色。", len(roles))
+	logger.Infof("Successfully fetched %d non-system roles.", len(roles))
 	return roles, nil
 }
 
-// UserPrivilegedRoleInfo 包含用户被授予的特权角色信息
+// UserPrivilegedRoleInfo contains information about privileged roles granted to users
 type UserPrivilegedRoleInfo struct {
 	Grantee     string `json:"grantee"`      // 用户名或角色名
-	GrantedRole string `json:"granted_role"` // 被授予的角色
+	GrantedRole string `json:"granted_role"` // The role that was granted
 	AdminOption string `json:"admin_option"` // YES/NO
 	DefaultRole string `json:"default_role"` // YES/NO
 }
 
-// GetUsersWithPrivilegedRoles 获取被授予了特权角色的用户信息 (重点关注非系统用户)
+// GetUsersWithPrivilegedRoles gets information about users who have been granted privileged roles (focusing on non-system users)
 func GetUsersWithPrivilegedRoles(db *sql.DB) ([]UserPrivilegedRoleInfo, error) {
 	query := `
 SELECT drp.GRANTEE, drp.GRANTED_ROLE, drp.ADMIN_OPTION, drp.DEFAULT_ROLE
@@ -133,20 +133,20 @@ ORDER BY drp.GRANTEE, drp.GRANTED_ROLE`
 	var userRoles []UserPrivilegedRoleInfo
 	err := ExecuteQueryAndScanToStructs(db, &userRoles, query)
 	if err != nil {
-		return nil, fmt.Errorf("获取用户特权角色信息失败: %w", err)
+		return nil, fmt.Errorf("failed to get user privileged role info: %w", err)
 	}
-	logger.Infof("成功获取 %d 条用户特权角色信息。", len(userRoles))
+	logger.Infof("Successfully fetched %d user privileged role entries.", len(userRoles))
 	return userRoles, nil
 }
 
-// UserSystemPrivilegeInfo 包含用户被授予的系统权限信息
+// UserSystemPrivilegeInfo contains information about system privileges granted to users
 type UserSystemPrivilegeInfo struct {
 	Grantee     string `json:"grantee"`      // 用户名
 	Privilege   string `json:"privilege"`    // 系统权限
 	AdminOption string `json:"admin_option"` // YES/NO
 }
 
-// GetUsersWithSystemPrivileges 获取被授予了系统权限的非系统用户信息
+// GetUsersWithSystemPrivileges gets information about non-system users who have been granted system privileges
 func GetUsersWithSystemPrivileges(db *sql.DB) ([]UserSystemPrivilegeInfo, error) {
 	query := `
 SELECT 
@@ -161,20 +161,20 @@ ORDER BY dsp.GRANTEE, dsp.PRIVILEGE`
 	var userSysPrivs []UserSystemPrivilegeInfo
 	err := ExecuteQueryAndScanToStructs(db, &userSysPrivs, query)
 	if err != nil {
-		return nil, fmt.Errorf("获取用户系统权限信息失败: %w", err)
+		return nil, fmt.Errorf("failed to get user system privilege info: %w", err)
 	}
-	logger.Infof("成功获取 %d 条用户系统权限信息。", len(userSysPrivs))
+	logger.Infof("Successfully fetched %d user system privilege entries.", len(userSysPrivs))
 	return userSysPrivs, nil
 }
 
-// RoleToRoleGrantInfo 包含角色授予其他角色的信息
+// RoleToRoleGrantInfo contains information about roles granted to other roles
 type RoleToRoleGrantInfo struct {
-	Role        string `json:"role"`         // 授予权限的角色
-	GrantedRole string `json:"granted_role"` // 被授予的角色
+	Role        string `json:"role"`         // The role to which privileges are granted
+	GrantedRole string `json:"granted_role"` // The role that was granted
 	AdminOption string `json:"admin_option"` // YES/NO
 }
 
-// GetRoleToRoleGrants 获取角色授予其他角色的信息 (主要关注授予者为非系统角色的情况)
+// GetRoleToRoleGrants gets information about roles granted to other roles (mainly focusing on cases where the grantor is a non-system role)
 func GetRoleToRoleGrants(db *sql.DB) ([]RoleToRoleGrantInfo, error) {
 	query := `
 SELECT rrp.ROLE, rrp.GRANTED_ROLE, rrp.ADMIN_OPTION
@@ -188,9 +188,9 @@ ORDER BY rrp.ROLE, rrp.GRANTED_ROLE`
 	var roleGrants []RoleToRoleGrantInfo
 	err := ExecuteQueryAndScanToStructs(db, &roleGrants, query)
 	if err != nil {
-		return nil, fmt.Errorf("获取角色授予角色信息失败: %w", err)
+		return nil, fmt.Errorf("failed to get role-to-role grant info: %w", err)
 	}
-	logger.Infof("成功获取 %d 条角色授予角色信息。", len(roleGrants))
+	logger.Infof("Successfully fetched %d role-to-role grant entries.", len(roleGrants))
 	return roleGrants, nil
 }
 

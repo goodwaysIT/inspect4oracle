@@ -13,19 +13,19 @@ type ArchivelogModeInfo struct {
 	LogMode string `json:"log_mode"` // ARCHIVELOG or NOARCHIVELOG
 }
 
-// GetArchivelogMode 获取数据库当前的日志模式。
+// GetArchivelogMode gets the current log mode of the database.
 func GetArchivelogMode(db *sql.DB) (ArchivelogModeInfo, error) {
 	var info ArchivelogModeInfo
 	query := `SELECT LOG_MODE AS LogMode FROM V$DATABASE`
 	err := db.QueryRow(query).Scan(&info.LogMode)
 	if err != nil {
-		return info, fmt.Errorf("获取数据库日志模式失败: %w", err)
+		return info, fmt.Errorf("failed to get database log mode: %w", err)
 	}
-	logger.Infof("成功获取数据库日志模式: %s", info.LogMode)
+	logger.Infof("Successfully retrieved database log mode: %s", info.LogMode)
 	return info, nil
 }
 
-// RMANBackupJobInfo 存储 RMAN 备份作业的详细信息。
+// RMANBackupJobInfo stores detailed information about RMAN backup jobs.
 type RMANBackupJobInfo struct {
 	SessionKey         int64        `json:"session_key"`
 	StartTime          sql.NullTime `json:"start_time"`
@@ -38,7 +38,7 @@ type RMANBackupJobInfo struct {
 	CompressionRatio   float64      `json:"compression_ratio"` // For V$RMAN_BACKUP_JOB_DETAILS if available
 }
 
-// GetRecentRMANBackupJobs 获取最近的 RMAN 备份作业 (例如过去7天)。
+// GetRecentRMANBackupJobs gets recent RMAN backup jobs (e.g., last 7 days).
 func GetRecentRMANBackupJobs(db *sql.DB) ([]RMANBackupJobInfo, error) {
 	query := `
 SELECT 
@@ -59,7 +59,7 @@ ORDER BY START_TIME DESC`
 	err := ExecuteQueryAndScanToStructs(db, &jobs, query)
 	if err != nil {
 		// V$RMAN_BACKUP_JOB_DETAILS 可能不存在或无权限，尝试 V$BACKUP_SET 作为备选
-		logger.Warnf("查询 V$RMAN_BACKUP_JOB_DETAILS 失败 (%v)，尝试 V$BACKUP_SET", err)
+		logger.Warnf("Failed to query V$RMAN_BACKUP_JOB_DETAILS (%v), trying V$BACKUP_SET", err)
 		queryBackupSet := `
 SELECT 
     RECID AS SessionKey, 
@@ -72,14 +72,14 @@ SELECT
     NULL AS Optimized,
     NULL AS CompressionRatio 
 FROM V$BACKUP_SET 
-WHERE COMPLETION_TIME >= SYSDATE - 7 AND BACKUP_TYPE != 'L' -- 排除纯归档日志备份，关注数据文件备份
+WHERE COMPLETION_TIME >= SYSDATE - 7 AND BACKUP_TYPE != 'L' -- Exclude pure archive log backups, focus on data file backups
 ORDER BY COMPLETION_TIME DESC`
 		err = ExecuteQueryAndScanToStructs(db, &jobs, queryBackupSet)
 		if err != nil {
-			return nil, fmt.Errorf("获取 RMAN 备份作业信息失败 (尝试了 V$RMAN_BACKUP_JOB_DETAILS 和 V$BACKUP_SET): %w", err)
+			return nil, fmt.Errorf("failed to get RMAN backup job information (tried V$RMAN_BACKUP_JOB_DETAILS and V$BACKUP_SET): %w", err)
 		}
 	}
-	logger.Infof("成功获取 %d 条 RMAN 备份作业信息。", len(jobs))
+	logger.Infof("Successfully retrieved %d RMAN backup job records.", len(jobs))
 	return jobs, nil
 }
 
@@ -91,7 +91,7 @@ type FlashbackStatusInfo struct {
 	RetentionTarget     sql.NullInt64 `json:"retention_target"` // DB_FLASHBACK_RETENTION_TARGET in minutes
 }
 
-// GetFlashbackStatus 获取闪回数据库的状态。
+// GetFlashbackStatus gets the status of the flashback database.
 func GetFlashbackStatus(db *sql.DB) (FlashbackStatusInfo, error) {
 	var info FlashbackStatusInfo
 	query := `
@@ -106,13 +106,13 @@ LEFT JOIN V$PARAMETER p ON p.NAME = 'db_flashback_retention_target'`
 
 	err := db.QueryRow(query).Scan(&info.FlashbackOn, &info.OldestFlashbackSCN, &info.OldestFlashbackTime, &info.RetentionTarget)
 	if err != nil && err != sql.ErrNoRows {
-		return info, fmt.Errorf("获取闪回数据库状态失败: %w", err)
+		return info, fmt.Errorf("failed to get flashback database status: %w", err)
 	}
-	logger.Infof("成功获取闪回数据库状态: FlashbackOn=%s", info.FlashbackOn)
+	logger.Infof("Successfully retrieved flashback database status: FlashbackOn=%s", info.FlashbackOn)
 	return info, nil
 }
 
-// RecycleBinObjectInfo 存储回收站中的对象信息。
+// RecycleBinObjectInfo stores information about objects in the recycle bin.
 type RecycleBinObjectInfo struct {
 	Owner        string         `json:"owner"`
 	ObjectName   string         `json:"object_name"`
@@ -125,7 +125,7 @@ type RecycleBinObjectInfo struct {
 	CanUndrop    string         `json:"can_undrop"`
 }
 
-// GetRecycleBinObjects 获取回收站中的对象 (仅可恢复的)。
+// GetRecycleBinObjects gets objects from the recycle bin (only recoverable ones).
 func GetRecycleBinObjects(db *sql.DB) ([]RecycleBinObjectInfo, error) {
 	query := `
 SELECT 
@@ -145,13 +145,13 @@ ORDER BY DROPTIME DESC`
 	var objects []RecycleBinObjectInfo
 	err := ExecuteQueryAndScanToStructs(db, &objects, query)
 	if err != nil {
-		return nil, fmt.Errorf("获取回收站对象信息失败: %w", err)
+		return nil, fmt.Errorf("failed to get recycle bin object information: %w", err)
 	}
-	logger.Infof("成功获取 %d 条回收站对象信息。", len(objects))
+	logger.Infof("Successfully retrieved %d recycle bin object records.", len(objects))
 	return objects, nil
 }
 
-// DataPumpJobInfo 存储 Data Pump 作业的信息。
+// DataPumpJobInfo stores information about Data Pump jobs.
 type DataPumpJobInfo struct {
 	JobName          string        `json:"job_name"`
 	OwnerName        string        `json:"owner_name"`
@@ -161,7 +161,7 @@ type DataPumpJobInfo struct {
 	AttachedSessions sql.NullInt64 `json:"attached_sessions"`
 }
 
-// GetDataPumpJobs 获取当前或最近的 Data Pump 作业。
+// GetDataPumpJobs gets current or recent Data Pump jobs.
 func GetDataPumpJobs(db *sql.DB) ([]DataPumpJobInfo, error) {
 	query := `
 SELECT 
@@ -177,13 +177,13 @@ ORDER BY OWNER_NAME, JOB_NAME`
 	var jobs []DataPumpJobInfo
 	err := ExecuteQueryAndScanToStructs(db, &jobs, query)
 	if err != nil {
-		return nil, fmt.Errorf("获取 Data Pump 作业信息失败: %w", err)
+		return nil, fmt.Errorf("failed to get Data Pump job information: %w", err)
 	}
-	logger.Infof("成功获取 %d 条 Data Pump 作业信息。", len(jobs))
+	logger.Infof("Successfully retrieved %d Data Pump job records.", len(jobs))
 	return jobs, nil
 }
 
-// AllBackupInfo 包含所有备份相关的信息的集合，用于传递给处理器。
+// AllBackupInfo contains a collection of all backup-related information to be passed to the processor.
 type AllBackupInfo struct {
 	ArchivelogMode       ArchivelogModeInfo
 	RMANJobs             []RMANBackupJobInfo
@@ -197,7 +197,7 @@ type AllBackupInfo struct {
 	DataPumpJobsError    error
 }
 
-// GetAllBackupDetails 汇总所有备份相关的信息。
+// GetAllBackupDetails aggregates all backup-related information.
 func GetAllBackupDetails(db *sql.DB) AllBackupInfo {
 	var backupInfo AllBackupInfo
 

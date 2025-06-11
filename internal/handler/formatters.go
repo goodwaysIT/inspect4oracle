@@ -23,7 +23,7 @@ func formatNullString(ns sql.NullString) string {
 }
 
 // formatNullInt64 辅助函数，用于格式化 sql.NullInt64
-// (已存在于 module_processor.go, 如果要统一管理则移到此处)
+// (Already exists in module_processor.go, move here for unified management if desired)
 func formatNullInt64(ni sql.NullInt64) string {
 	if ni.Valid {
 		return fmt.Sprintf("%d", ni.Int64)
@@ -32,7 +32,7 @@ func formatNullInt64(ni sql.NullInt64) string {
 }
 
 // formatNullFloat64 辅助函数，用于格式化 sql.NullFloat64
-// (已存在于 module_processor.go, 如果要统一管理则移到此处)
+// (Already exists in module_processor.go, move here for unified management if desired)
 func formatNullFloat64(nf sql.NullFloat64, format string) string {
 	if nf.Valid {
 		return fmt.Sprintf(format, nf.Float64)

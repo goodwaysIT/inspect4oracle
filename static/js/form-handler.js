@@ -1,8 +1,8 @@
 // 表单处理模块
 const formHandler = {
-    // 显示消息框
+    // Show message box
     showMessage(message, type = 'info') {
-        // 创建消息框容器
+        // Create message box container
         let messageBox = document.getElementById('message-box');
         
         if (!messageBox) {
@@ -15,23 +15,23 @@ const formHandler = {
             document.body.appendChild(messageBox);
         }
         
-        // 创建消息元素
+        // Create message element
         const messageElement = document.createElement('div');
         messageElement.className = `alert alert-${type} alert-dismissible fade show`;
         messageElement.role = 'alert';
         messageElement.style.minWidth = '300px';
         messageElement.style.marginBottom = '10px';
         
-        // 添加消息内容
+        // Add message content
         messageElement.innerHTML = `
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
         
-        // 添加到消息框
+        // Add to message box
         messageBox.appendChild(messageElement);
         
-        // 5秒后自动消失
+        // Disappears automatically after 5 seconds
         setTimeout(() => {
             messageElement.classList.remove('show');
             setTimeout(() => messageElement.remove(), 150);
@@ -41,10 +41,10 @@ const formHandler = {
     // 初始化表单
     init() {
         // console.log('[form-handler.js] DEBUG: formHandler.init() called.');
-        // 获取表单元素 - ID 必须与 HTML 中的完全匹配
+        // Get form elements - IDs must exactly match those in the HTML
         this.form = document.getElementById('inspection-form'); // 更正为 'inspection-form'
         // console.log('[form-handler.js] DEBUG: this.form element:', this.form);
-        this.logContent = document.getElementById('inspection-log-content'); // 确保日志输出到正确的卡片中
+        this.logContent = document.getElementById('inspection-log-content'); // Ensure logs are output to the correct card
         
         // 如果没有表单（可能在报告页面），则返回
         if (!this.form) {
@@ -75,9 +75,11 @@ const formHandler = {
         const originalButtonText = button.innerHTML;
         
         try {
-            // 禁用按钮，防止重复点击
+            // Disable button to prevent multiple clicks
             button.disabled = true;
-            button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 验证中...';
+            const currentLang = document.querySelector('input[name="lang"]:checked')?.value || 'zh';
+            const validatingText = (window.langMap && window.langMap[currentLang]?.validating) || '验证中...';
+            button.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ${validatingText}`;
             
             // 验证数据库连接
             const validation = await this.validateConnection(formData);
@@ -119,8 +121,9 @@ const formHandler = {
         
         try {
             submitButton.disabled = true;
-            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ' + 
-                                   (window.langMap && window.langMap[form.lang?.value || 'zh']?.in_progress || '巡检中...');
+            const currentLang = document.querySelector('input[name="lang"]:checked')?.value || 'zh';
+            const inProgressText = (window.langMap && window.langMap[currentLang]?.in_progress) || '巡检中...';
+            submitButton.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ${inProgressText}`;
             
             this.showLogCard();
             this.log('Starting database inspection...', 'info');
@@ -215,7 +218,7 @@ const formHandler = {
         }
     },
     
-    // 提交巡检请求
+    // Submit inspection request
     async submitInspection(formData) {
         try {
             // 记录表单数据以便调试
@@ -225,7 +228,7 @@ const formHandler = {
             });
 
 
-            // 注意：不要设置 Content-Type 头，浏览器会自动设置正确的 multipart/form-data 边界
+            // Note: Do not set the Content-Type header; the browser will automatically set the correct multipart/form-data boundary
             const response = await fetch('/api/inspect', {
                 method: 'POST',
                 body: formData
@@ -273,21 +276,21 @@ const formHandler = {
             title.style.marginBottom = '20px';
             reportContainer.appendChild(title);
             
-            // 添加数据库信息
+            // Add database information
             const dbInfo = document.createElement('div');
             dbInfo.className = 'card mb-4';
             dbInfo.innerHTML = `
                 <div class="card-header">
-                    <h5 class="mb-0">数据库信息</h5>
+                    <h5 class="mb-0">Database Information</h5>
                 </div>
                 <div class="card-body">
-                    <p><strong>数据库名称：</strong>${reportData.dbInfo || 'N/A'}</p>
+                    <p><strong>Database Name:</strong>${reportData.dbInfo || 'N/A'}</p>
                     <p><strong>生成时间：</strong>${reportData.generatedAt || 'N/A'}</p>
                 </div>
             `;
             reportContainer.appendChild(dbInfo);
             
-            // 添加模块信息
+            // Add module information
             if (reportData.modules && reportData.modules.length > 0) {
                 const modulesContainer = document.createElement('div');
                 reportData.modules.forEach(module => {
@@ -295,7 +298,7 @@ const formHandler = {
                     moduleElement.className = 'card mb-4';
                     moduleElement.innerHTML = `
                         <div class="card-header">
-                            <h5 class="mb-0">${module.name || '未命名模块'}</h5>
+                            <h5 class="mb-0">${module.name || 'Unnamed Module'}</h5>
                         </div>
                         <div class="card-body">
                             ${this.formatModuleContent(module)}
@@ -308,7 +311,7 @@ const formHandler = {
             
             // 清空日志容器并添加报告
             const logContent = document.getElementById('log-content');
-            const logContainer = logContent.parentNode; // 获取父容器
+            const logContainer = logContent.parentNode; // Get the parent container
             
             // 显示日志容器
             logContent.classList.remove('d-none');
@@ -428,7 +431,7 @@ const formHandler = {
             return;
         }
 
-        // 如果页面上已经有密码显示/隐藏按钮，则使用现有的
+        // If a password toggle button already exists on the page, use it
         if (existingToggle) {
             existingToggle.addEventListener('click', () => {
                 const type = passwordInput.type === 'password' ? 'text' : 'password';
@@ -449,7 +452,7 @@ const formHandler = {
     
     // 初始化折叠面板
     initCollapsePanels() {
-        // 使用 Bootstrap 的折叠组件
+        // Use Bootstrap's collapse component
         const collapseElements = document.querySelectorAll('[data-bs-toggle="collapse"]');
         collapseElements.forEach(element => {
             element.addEventListener('click', function() {

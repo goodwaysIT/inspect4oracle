@@ -1,5 +1,5 @@
 /**
- * 报告导出模块 - 用于生成并导出完整的数据库巡检报告
+ * Report Exporter Module - for generating and exporting complete database inspection reports
  * @author GoodwaysIT
  * @version 1.0.0
  */
@@ -22,14 +22,14 @@ const ReportExporter = (function() {
     },
     zh: {
       sidebar_title_export: "Oracle 数据库巡检报告",
-      db_info_export: "数据库信息",
+      db_info_export: "Database Information",
       inspection_modules_export: "巡检模块",
       report_generated_at_export: "报告生成于:",
       generation_time_export: "生成时间:",
       footer_copyright_export: `© ${new Date().getFullYear()} GoodwaysIT. 保留所有权利。`,
       db_info_not_found_sidebar: '<p style="color:red; font-weight:bold;">侧边栏元素 (.sidebar) 未在页面上找到。</p>',
-      db_info_container_not_found_sidebar: '<p style="color:red; font-weight:bold;">数据库信息容器 (.db-info-container) 未在侧边栏 (.sidebar) 内找到。</p>',
-      db_info_not_provided_export: '<p style="color:orange; font-weight:bold;">数据库信息未在收集阶段正确提供。</p>',
+      db_info_container_not_found_sidebar: '<p style="color:red; font-weight:bold;">Database info container (.db-info-container) not found within the sidebar (.sidebar).</p>',
+      db_info_not_provided_export: '<p style="color:orange; font-weight:bold;">Database information was not correctly provided during the collection phase.</p>',
       main_report_title_export: 'Oracle 数据库巡检报告'
     }
   };
@@ -58,8 +58,8 @@ const ReportExporter = (function() {
   };
 
   /**
-   * 获取数据库名称和连接信息
-   * @returns {Object} 包含数据库名和连接信息的对象
+   * Get database name and connection info
+   * @returns {Object} Object containing database name and connection info
    */
   function getDatabaseInfo() {
     const dbInfoElem = document.querySelector('.db-info-container .fw-medium');
@@ -69,12 +69,12 @@ const ReportExporter = (function() {
     let dbConn = 'localhost';
     
     if (dbInfoElem && dbInfoElem.textContent) {
-      // 提取数据库名，就是第一个空格前的内容
+      // Extract database name, which is the content before the first space
       dbName = dbInfoElem.textContent.split(' ')[0] || '数据库巡检';
     }
     
     if (dbConnElem && dbConnElem.textContent) {
-      // 提取连接信息，去除图标元素
+      // Extract connection info, removing icon elements
       dbConn = dbConnElem.textContent.trim().replace(/^\s*[^\s]+\s*/, '') || 'localhost';
     }
 
@@ -82,8 +82,8 @@ const ReportExporter = (function() {
   }
 
   /**
-   * 生成带格式的时间戳
-   * @returns {string} 格式化的时间戳
+   * Generates a formatted timestamp
+   * @returns {string} The formatted timestamp
    */
   function getFormattedTimestamp() {
     const now = new Date();
@@ -95,20 +95,20 @@ const ReportExporter = (function() {
   }
 
   /**
-   * 生成有效的文件名
-   * @param {Object} dbInfo 数据库信息
+   * Generate a valid filename
+   * @param {Object} dbInfo Database information
    * @param {string} timestamp 时间戳
-   * @returns {string} 有效的文件名
+   * @returns {string} A valid filename
    */
   function generateFileName(dbInfo, timestamp) {
     return (dbInfo.dbName + '_' + dbInfo.dbConn + '_' + timestamp + '.html')
-      .replace(/[\\/:\*\?\"<>\|]/g, '_')  // 替换Windows不允许的文件名字符
+      .replace(/[\\/:\*\?\"<>\|]/g, '_')  // Replace characters not allowed in Windows filenames
       .replace(/\s+/g, '_');                  // 替换空格
   }
 
    /**
     * 收集报告数据，并将图表转换为图片
-    * @returns {Object} 包含所有报告数据的对象
+    * @returns {Object} An object containing all report data
     */
    function collectReportData() {
     const modules = [];
@@ -159,7 +159,7 @@ const ReportExporter = (function() {
        const canvasElements = clone.querySelectorAll('canvas.chart-canvas'); // 确保canvas有 'chart-canvas' 类
        canvasElements.forEach(canvas => {
            try {
-               // 尝试从 Chart.js 实例获取图表图片
+               // Try to get the chart image from the Chart.js instance
                // Chart.js v3+ stores instances in Chart.instances
                let chartInstance = null;
                if (typeof Chart !== 'undefined' && Chart.instances) {
@@ -196,7 +196,7 @@ const ReportExporter = (function() {
            }
        });
 
-       // 特殊处理总览页面的链接
+       // Special handling for the overview page link
        if (sectionId === 'section-all') {
            const overviewLinks = clone.querySelectorAll('.main-info-card a[onclick*="showSection"]');
            overviewLinks.forEach(link => {
@@ -206,7 +206,7 @@ const ReportExporter = (function() {
                    if (match && match.length === 3) {
                        const targetModuleId = match[1];
                        // console.log(`[ReportExporter] Rewriting overview link for module: ${targetModuleId}. Original onclick: ${originalOnclick}`);
-                       // 修改 onclick 以调用导出页面内的函数
+                       // Modify onclick to call a function within the exported page
                        link.setAttribute('onclick', `showExportedSection('${targetModuleId}'); return false;`);
                        link.href = `#section-${targetModuleId}`; // 添加锚点
                    }
@@ -263,9 +263,9 @@ const ReportExporter = (function() {
   }
 
   /**
-   * 获取自定义样式
+   * Get custom styles
    * @param {Object} style 自定义样式对象
-   * @param {boolean} isCompactMode 是否启用紧凑模式
+   * @param {boolean} isCompactMode Whether to enable compact mode
    * @returns {string} 自定义样式字符串
    */
   function getCustomStyles(style, isCompactMode) {
@@ -518,9 +518,9 @@ const ReportExporter = (function() {
   }
 
    /**
-    * 生成左侧导航菜单 (包含数据库信息)
+    * Generate the left navigation menu (including database information)
     * @param {Array} modules 模块数组
-    * @param {string} dbInfoHtml 数据库信息的HTML字符串
+    * @param {string} dbInfoHtml The HTML string of the database information
     * @returns {string} 导航菜单HTML
     */
    function generateSidebar(modules, dbInfoHtml) {
@@ -560,11 +560,11 @@ const ReportExporter = (function() {
   }
 
   /**
-   * 生成完整的HTML文档
+   * Generate the full HTML document
    * @param {Object} data 报告数据
-   * @param {Object} style 样式配置
-   * @param {boolean} isCompactMode 是否启用紧凑模式
-   * @returns {string} 完整的HTML文档字符串
+   * @param {Object} style Style configuration
+   * @param {boolean} isCompactMode Whether to enable compact mode
+   * @returns {string} The complete HTML document string
    */
   function generateHtmlDocument(data, style, isCompactMode) {
     const now = new Date();
@@ -573,7 +573,7 @@ const ReportExporter = (function() {
     // 创建模块内容HTML
     let sectionsHtml = '';
     
-    // 生成每个模块的内容区域
+    // Generate the content area for each module
     Object.keys(data.moduleContents).forEach(moduleId => {
       const isActive = moduleId === 'all' ? ' active' : '';
       sectionsHtml += `
@@ -757,7 +757,7 @@ const ReportExporter = (function() {
             <!-- 模块内容区 -->
             ${sectionsHtml}
             
-            <!-- 底部版权信息 -->
+            <!-- Footer Copyright Information -->
             <footer class="col-12 text-center text-muted small mt-5 py-3 border-top">
               <p class="mb-0">${translate('footer_copyright_export')}</p>
             </footer>
@@ -776,10 +776,10 @@ const ReportExporter = (function() {
           if (targetSection) {
             targetSection.style.display = 'block';
           }
-          // 更新侧边栏导航链接的激活状态
+          // Update the active state of the sidebar navigation links
           document.querySelectorAll('.sidebar .nav-link').forEach(link => {
             link.classList.remove('active');
-            // 检查 href 是否匹配 (更可靠的方式)
+            // Check if href matches (more reliable way)
             if (link.getAttribute('href') === '#section-' + sectionIdToShow || 
                 (link.getAttribute('onclick') && link.getAttribute('onclick').includes("showExportedSection('" + sectionIdToShow + "')"))) {
               link.classList.add('active');
@@ -801,9 +801,9 @@ const ReportExporter = (function() {
   }
 
   /**
-   * 保存HTML到文件
+   * Save HTML to a file
    * @param {string} html HTML内容
-   * @param {string} fileName 文件名
+   * @param {string} fileName The filename
    */
   function saveHtmlToFile(html, fileName) {
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
@@ -819,28 +819,28 @@ const ReportExporter = (function() {
   // 公共API
   return {
     /**
-     * 导出报告为HTML文件
+     * Export the report as an HTML file
      */
     exportReport: function() {
-      // 获取数据库信息
+      // Get database information
       const dbInfo = getDatabaseInfo();
       
-      // 生成时间戳和文件名
+      // Generate timestamp and filename
       const timestamp = getFormattedTimestamp();
       const fileName = generateFileName(dbInfo, timestamp);
       
       // 收集报告数据
       const reportData = collectReportData();
       
-      // 获取当前应用的样式设置
+      // Get the currently applied style settings
       const currentStyle = localStorage.getItem('reportStyle') || 'default';
       const style = window.styleVariables ? window.styleVariables[currentStyle] : DEFAULT_STYLES;
       const isCompactMode = window.compactModeStyles ? window.compactModeStyles.enabled : false;
       
-      // 生成HTML文档
+      // Generate HTML document
       const htmlDocument = generateHtmlDocument(reportData, style, isCompactMode);
       
-      // 保存文件
+      // Save the file
       saveHtmlToFile(htmlDocument, fileName);
     }
   };

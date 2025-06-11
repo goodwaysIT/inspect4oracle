@@ -12,13 +12,13 @@ import (
 	"github.com/goodwaysIT/inspect4oracle/internal/logger"
 )
 
-// chartColor 定义了图表的边框和背景颜色
+// chartColor defines the border and background colors for charts.
 type chartColor struct {
 	BorderColor     string
 	BackgroundColor string
 }
 
-// performanceChartColors 为性能图表提供一组预定义的颜色
+// performanceChartColors provides a predefined set of colors for performance charts.
 var performanceChartColors = []chartColor{
 	{BorderColor: "#007bff", BackgroundColor: "rgba(0, 123, 255, 0.2)"},   // Blue
 	{BorderColor: "#28a745", BackgroundColor: "rgba(40, 167, 69, 0.2)"},   // Green
@@ -73,7 +73,7 @@ func generatePerformanceChart(metricNameStr string, metricValues []db.SysMetricS
 	chartTitle := metricNameStr
 	yAxisLabel := metricUnit
 	if yAxisLabel == "" {
-		yAxisLabel = langText("值", "Value", lang)
+		yAxisLabel = langText("值", "Value", "値", lang)
 	}
 	if metricUnit != "" { // Append unit to title if present
 		chartTitle = fmt.Sprintf("%s (%s)", metricNameStr, metricUnit)
@@ -117,7 +117,7 @@ func generatePerformanceChart(metricNameStr string, metricValues []db.SysMetricS
 				},
 				Title: ChartScaleTitleOptions{
 					Display: true,
-					Text:    langText("时间", "Time", lang),
+					Text:    langText("时间", "Time", "時間", lang),
 				},
 			},
 			Y: ChartScaleOptions{
@@ -133,12 +133,12 @@ func generatePerformanceChart(metricNameStr string, metricValues []db.SysMetricS
 	perfChartJSData := ChartJSData{Datasets: currentChartDatasets}
 	datasetsJSON, errMarshal := json.Marshal(perfChartJSData)
 	if errMarshal != nil {
-		logger.Errorf("无法序列化性能图表 '%s' 的数据集为JSON: %v", metricNameStr, errMarshal)
+		logger.Errorf("Failed to serialize dataset for performance chart '%s' to JSON: %v", metricNameStr, errMarshal)
 		return nil, fmt.Errorf("failed to marshal chart datasets for %s: %w", metricNameStr, errMarshal)
 	}
 	optionsJSON, errMarshal := json.Marshal(perfChartOptions)
 	if errMarshal != nil {
-		logger.Errorf("无法序列化性能图表 '%s' 的选项为JSON: %v", metricNameStr, errMarshal)
+		logger.Errorf("Failed to serialize options for performance chart '%s' to JSON: %v", metricNameStr, errMarshal)
 		return nil, fmt.Errorf("failed to marshal chart options for %s: %w", metricNameStr, errMarshal)
 	}
 
@@ -150,34 +150,33 @@ func generatePerformanceChart(metricNameStr string, metricValues []db.SysMetricS
 	}, nil
 }
 
-// processPerformanceModule 处理性能模块的逻辑，获取指标数据并生成图表
+// processPerformanceModule handles the logic for the performance module, fetching metric data and generating charts.
 func processPerformanceModule(dbConn *sql.DB, lang string) ([]ReportCard, []*ReportTable, []ReportChart, error) {
 	var cards []ReportCard
 	var tables []*ReportTable // Performance module currently doesn't generate tables, but we keep the signature consistent
 	var charts []ReportChart
 	var overallErr error
 
-	logger.Info("开始处理性能模块...")
+	logger.Info("Starting to process performance module...")
 
-	// 1. 获取所有性能指标数据
+	// 1. Get all performance metrics data
 	metricsBundle := db.GetAllPerformanceMetrics(dbConn)
 	metricsData := metricsBundle.SysMetricsSummary
 	err := metricsBundle.SysMetricsError
 	if err != nil {
-		errMsg := langText("获取性能指标数据失败", "Failed to retrieve performance metrics data", lang)
-		logger.Errorf("%s: %v", errMsg, err)
-		cards = append(cards, cardFromError(langText("性能指标错误", "Performance Metrics Error", lang), errMsg, err, lang))
+		logger.Errorf("%s: %v", langText("Failed to retrieve performance metrics data", "Failed to retrieve performance metrics data", "Failed to retrieve performance metrics data", lang), err)
+		cards = append(cards, cardFromError("Performance Metrics Error", "Performance Metrics Error", "Performance Metrics Error", err, lang))
 		overallErr = err
-		// 不直接返回，允许后续处理其他可能的metrics数据，如果GetAllPerformanceMetrics将来返回多种metrics
+		// Do not return directly, allow subsequent processing of other possible metrics data if GetAllPerformanceMetrics returns multiple metrics in the future.
 	}
 
-	if len(metricsData) == 0 && overallErr == nil { // 如果有错误，则错误卡片已添加
-		logger.Warn("性能模块: 未获取到任何性能指标数据")
+	if len(metricsData) == 0 && overallErr == nil { // If there is an error, the error card has already been added
+		logger.Warn("Performance module: No performance metric data was retrieved.")
 		cards = append(cards, ReportCard{
-			Title: langText("性能指标", "Performance Metrics", lang),
-			Value: langText("未获取到任何性能指标数据。", "No performance metrics data was retrieved.", lang),
+			Title: langText("性能指标", "Performance Metrics", "パフォーマンスメトリクス", lang),
+			Value: langText("No performance metrics data was retrieved.", "No performance metrics data was retrieved.", "パフォーマンスメトリクスデータが取得されませんでした。", lang),
 		})
-		// 不返回，因为可能还有其他metrics数据或错误
+		// Do not return, as there may be other metrics data or errors
 	}
 
 	// Group metrics by metric name
@@ -195,7 +194,7 @@ func processPerformanceModule(dbConn *sql.DB, lang string) ([]ReportCard, []*Rep
 	for metricNameStr, metricValues := range metricsMap {
 		chart, errGenChart := generatePerformanceChart(metricNameStr, metricValues, lang, colorIndex)
 		if errGenChart != nil {
-			logger.Errorf("生成性能图表 '%s' 失败: %v", metricNameStr, errGenChart)
+			logger.Errorf("Failed to generate performance chart '%s': %v", metricNameStr, errGenChart)
 			if overallErr == nil {
 				overallErr = errGenChart
 			} else {
@@ -211,11 +210,11 @@ func processPerformanceModule(dbConn *sql.DB, lang string) ([]ReportCard, []*Rep
 
 	if len(charts) == 0 && overallErr == nil && len(metricsData) > 0 { // Add note only if data was present but no charts made
 		cards = append(cards, ReportCard{
-			Title: langText("图表提示", "Chart Note", lang),
-			Value: langText("虽然获取到了性能指标原始数据，但未能生成任何图表。可能是因为期望的指标数据缺失或无效。", "Although raw performance metrics data was retrieved, no charts could be generated. This might be due to missing or invalid data for the expected metrics.", lang),
+			Title: langText("图表提示", "Chart Note", "チャートノート", lang),
+			Value: langText("Although raw performance metrics data was retrieved, no charts could be generated. This might be due to missing or invalid data for the expected metrics.", "Although raw performance metrics data was retrieved, no charts could be generated. This might be due to missing or invalid data for the expected metrics.", "Although raw performance metrics data was retrieved, no charts could be generated. This might be due to missing or invalid data for the expected metrics.", lang),
 		})
 	}
 
-	logger.Info("性能模块处理完成.")
+	logger.Info("Performance module processing completed.")
 	return cards, tables, charts, overallErr
 }

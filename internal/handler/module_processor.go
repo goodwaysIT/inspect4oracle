@@ -67,58 +67,58 @@ type moduleInfo struct {
 // moduleProcessors maps inspection item keys to their respective moduleInfo.
 var moduleProcessors = map[string]moduleInfo{
 	"params": {
-		nameFunc:  func(lang string) string { return langText("数据库参数", "Key Database Parameters", lang) },
+		nameFunc:  func(lang string) string { return langText("数据库参数", "Key Database Parameters", "主要なデータベースパラメータ", lang) },
 		processor: adaptParametersModule,
 	},
 	"parameters": { // Alias for params
-		nameFunc:  func(lang string) string { return langText("数据库参数", "Key Database Parameters", lang) },
+		nameFunc:  func(lang string) string { return langText("Key Database Parameters", "Key Database Parameters", "Key Database Parameters", lang) },
 		processor: adaptParametersModule,
 	},
 	"dbinfo": {
-		nameFunc:  func(lang string) string { return langText("基本信息", "Basic Info", lang) },
+		nameFunc:  func(lang string) string { return langText("Basic Info", "Basic Info", "Basic Info", lang) },
 		processor: processDbinfoModule, // Assumes processDbinfoModule is compatible or adapted
 	},
 	"storage": {
-		nameFunc:  func(lang string) string { return langText("存储信息", "Storage Info", lang) },
+		nameFunc:  func(lang string) string { return langText("Storage Info", "Storage Info", "Storage Info", lang) },
 		processor: adaptStorageModule,
 	},
 	"sessions": {
-		nameFunc:  func(lang string) string { return langText("会话详情", "Session Details", lang) },
+		nameFunc:  func(lang string) string { return langText("Session Details", "Session Details", "Session Details", lang) },
 		processor: adaptSessionsModule,
 	},
 	"objects": {
-		nameFunc: func(lang string) string { return langText("数据库对象", "Database Objects", lang) },
+		nameFunc: func(lang string) string { return langText("Database Objects", "Database Objects", "Database Objects", lang) },
 		titleFunc: func(lang string) string {
-			return langText("数据库对象统计与状态", "Database Objects Statistics & Status", lang)
+			return langText("Database Objects Statistics & Status", "Database Objects Statistics & Status", "Database Objects Statistics & Status", lang)
 		},
 		icon:      "fas fa-cube",
 		processor: adaptObjectsModule,
 	},
 	"performance": {
-		nameFunc:  func(lang string) string { return langText("数据库性能", "Database Performance", lang) },
+		nameFunc:  func(lang string) string { return langText("Database Performance", "Database Performance", "Database Performance", lang) },
 		processor: adaptPerformanceModule,
 	},
 	"security": {
-		nameFunc:  func(lang string) string { return langText("安全配置", "Security Configuration", lang) },
+		nameFunc:  func(lang string) string { return langText("Security Configuration", "Security Configuration", "Security Configuration", lang) },
 		processor: processSecurityModule, // Assumes processSecurityModule is compatible or adapted
 	},
 	"backup": {
-		nameFunc:  func(lang string) string { return langText("备份与恢复", "Backup & Recovery", lang) },
+		nameFunc:  func(lang string) string { return langText("Backup & Recovery", "Backup & Recovery", "Backup & Recovery", lang) },
 		processor: adaptBackupModule,
 	},
 }
 
-// ProcessInspectionItem 处理单个巡检项并返回报告模块。
-// fullDBInfo 参数包含了从 dbinfo 模块预先获取的数据库的全面信息，供其他模块参考。
-// 如果 fullDBInfo 为 nil (例如，在获取 dbinfo 本身时发生错误)，函数仍会尝试处理，但依赖 fullDBInfo 的模块可能会受影响。
+// ProcessInspectionItem processes a single inspection item and returns a report module.
+// The fullDBInfo parameter contains comprehensive database information pre-fetched from the dbinfo module for reference by other modules.
+// If fullDBInfo is nil (e.g., an error occurred while fetching dbinfo itself), the function will still attempt to process, but modules dependent on fullDBInfo may be affected.
 func ProcessInspectionItem(item string, dbConn *sql.DB, lang string, fullDBInfo *db.FullDBInfo) (ReportModule, error) {
 	module := ReportModule{ID: item, Cards: []ReportCard{}} // Initialize module
 
 	pInfo, ok := moduleProcessors[item]
 	if !ok {
-		module.Name = fmt.Sprintf(langText("未知模块: %s", "Unknown Module: %s", lang), item)
-		errMsg := fmt.Sprintf(langText("此模块 '%s' 的处理器未实现", "Handler for module '%s' is not implemented", lang), item)
-		module.Cards = []ReportCard{{Title: langText("错误", "Error", lang), Value: errMsg}}
+		module.Name = fmt.Sprintf(langText("Unknown Module: %s", "Unknown Module: %s", "Unknown Module: %s", lang), item)
+		errMsg := fmt.Sprintf(langText("Handler for module '%s' is not implemented", "Handler for module '%s' is not implemented", "Handler for module '%s' is not implemented", lang), item)
+		module.Cards = []ReportCard{{Title: langText("Error", "Error", "Error", lang), Value: errMsg}}
 		return module, fmt.Errorf(errMsg)
 	}
 
@@ -132,7 +132,7 @@ func ProcessInspectionItem(item string, dbConn *sql.DB, lang string, fullDBInfo 
 
 	// Log before calling the processor, especially for modules like backup that might take time
 	if item == "backup" { // Specific logging for backup or other long-running modules
-		logger.Infof("开始委派处理 %s 模块...", item)
+		logger.Infof("Starting to delegate processing for module %s...", item)
 	}
 
 	cards, tables, charts, err := pInfo.processor(dbConn, lang, fullDBInfo)
@@ -142,7 +142,7 @@ func ProcessInspectionItem(item string, dbConn *sql.DB, lang string, fullDBInfo 
 	module.Charts = append(module.Charts, charts...)
 
 	if err != nil {
-		logger.Errorf("%s 模块处理返回错误: %v", item, err) // Generic error logging
+		logger.Errorf("Error processing module %s: %v", item, err) // Generic error logging
 		module.Error = err.Error()                  // Store error message in module
 		// Note: The individual processor or its adapter is responsible for adding specific error cards if needed.
 		// For critical errors that should halt further processing for this module, the processor should return the error.
@@ -158,16 +158,20 @@ func ProcessInspectionItem(item string, dbConn *sql.DB, lang string, fullDBInfo 
 	return module, nil
 }
 
-// langText 是一个辅助函数，用于根据语言选择文本。
-// 实际项目中，这个函数可能位于一个共享的 utils 或 i18n 包中。
-func langText(zhText, enText, lang string) string {
-	if lang == "zh" {
+// langText is a helper function for selecting text based on language.
+// In a real project, this function might be located in a shared utils or i18n package.
+func langText(zhText, enText, jpText, lang string) string {
+	switch lang {
+	case "zh":
 		return zhText
+	case "jp":
+		return jpText
+	default:
+		return enText // Default to English
 	}
-	return enText // 默认为英文
 }
 
-// formatNullInt64AsGB 辅助函数，用于格式化 sql.NullInt64 并转换为 GB
+// formatNullInt64AsGB is a helper function to format sql.NullInt64 and convert it to GB.
 func formatNullInt64AsGB(ni sql.NullInt64) string {
 	if ni.Valid {
 		return fmt.Sprintf("%.2f GB", float64(ni.Int64)/1024/1024/1024)
@@ -175,10 +179,10 @@ func formatNullInt64AsGB(ni sql.NullInt64) string {
 	return "N/A"
 }
 
-// cardFromError 是一个辅助函数，用于从错误创建标准错误卡片
-func cardFromError(titleKey, titleDefault string, err error, lang string) ReportCard {
+// cardFromError is a helper function to create a standard error card from an error.
+func cardFromError(titleZh, titleEn, titleJp string, err error, lang string) ReportCard {
 	return ReportCard{
-		Title: langText(titleKey, titleDefault, lang),
-		Value: fmt.Sprintf(langText("获取信息失败: %v", "Failed to get information: %v", lang), err),
+		Title: langText(titleZh, titleEn, titleJp, lang),
+		Value: fmt.Sprintf(langText("Failed to get data: %v", "Failed to get data: %v", "Failed to get data: %v", lang), err),
 	}
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/goodwaysIT/inspect4oracle/internal/logger"
 )
 
-// SessionOverview 包含当前会话的概述信息
+// SessionOverview contains overview information for current sessions
 // Corresponds to: select inst_id,username,machine,status,count(*) as session_count from gv$session group by inst_id,username,machine,status;
 type SessionOverview struct {
 	InstID       int            `json:"inst_id"`
@@ -17,14 +17,14 @@ type SessionOverview struct {
 	SessionCount int            `json:"session_count"`
 }
 
-// SessionEventCount 包含按等待事件统计的会话数
+// SessionEventCount contains the session count grouped by wait event
 // Corresponds to: select event,count(*) as session_count from gv$session group by event order by 1;
 type SessionEventCount struct {
 	Event        string `json:"event"`
 	SessionCount int    `json:"session_count"`
 }
 
-// SessionHistoryPoint 包含特定时间点的会话数，用于图表
+// SessionHistoryPoint contains the session count at a specific point in time, for charting
 // Corresponds to: select to_char(sample_time,'yyyy-mm-dd hh24:mi') as sample_time,count(*) as session_count
 // from gv$active_session_history where sample_time > sysdate - 1
 // group by to_char(sample_time,'yyyy-mm-dd hh24:mi') order by 1;
@@ -33,14 +33,14 @@ type SessionHistoryPoint struct {
 	SessionCount int    `json:"session_count"`
 }
 
-// AllSessionInfo 包含所有会话相关的信息，用于传递给处理器
+// AllSessionInfo contains all session-related information to be passed to the handler
 type AllSessionInfo struct {
 	Overview        []SessionOverview
 	ByEvent         []SessionEventCount
 	HistoryForChart []SessionHistoryPoint
 }
 
-// getCurrentSessionOverview 获取当前会话概述
+// getCurrentSessionOverview gets the current session overview
 func getCurrentSessionOverview(db *sql.DB) ([]SessionOverview, error) {
 	query := `
 SELECT 
@@ -55,14 +55,14 @@ ORDER BY inst_id, username, machine, status`
 	var overview []SessionOverview
 	err := ExecuteQueryAndScanToStructs(db, &overview, query)
 	if err != nil {
-		return nil, fmt.Errorf("获取当前会话概述失败: %w", err)
+		return nil, fmt.Errorf("failed to get current session overview: %w", err)
 	}
-	logger.Infof("成功获取 %d 个会话的概述信息。", len(overview))
-	logger.Debugf("会话概述信息: %v", overview)
+	logger.Infof("Successfully fetched overview for %d sessions.", len(overview))
+	logger.Debugf("Session overview info: %v", overview)
 	return overview, nil
 }
 
-// getSessionCountByEvent 获取按等待事件统计的会话数
+// getSessionCountByEvent gets the session count grouped by wait event
 func getSessionCountByEvent(db *sql.DB) ([]SessionEventCount, error) {
 	query := `
 SELECT 
@@ -74,14 +74,14 @@ ORDER BY SessionCount DESC, event` // Order by count desc for better readability
 	var byEvent []SessionEventCount
 	err := ExecuteQueryAndScanToStructs(db, &byEvent, query)
 	if err != nil {
-		return nil, fmt.Errorf("获取按等待事件统计的会话数失败: %w", err)
+		return nil, fmt.Errorf("failed to get session count by wait event: %w", err)
 	}
-	logger.Infof("成功获取 %d 个会话的等待事件统计信息。", len(byEvent))
-	logger.Debugf("等待事件统计信息: %v", byEvent)
+	logger.Infof("Successfully fetched wait event statistics for %d sessions.", len(byEvent))
+	logger.Debugf("Wait event statistics: %v", byEvent)
 	return byEvent, nil
 }
 
-// getDailySessionHistory 获取最近一天的会话历史记录，用于图表
+// getDailySessionHistory gets the session history for the last day, for charting
 func getDailySessionHistory(db *sql.DB) ([]SessionHistoryPoint, error) {
 	query := `
 SELECT 
@@ -95,40 +95,40 @@ ORDER BY SampleTime`
 	err := ExecuteQueryAndScanToStructs(db, &history, query)
 	if err != nil {
 		// Log a warning if ASH is not available or licensed.
-		logger.Warnf("获取会话历史(ASH)失败 (可能是ASH未启用或许可问题): %v", err)
+		logger.Warnf("Failed to get session history (ASH) (could be due to ASH not being enabled or license issues): %v", err)
 		// Return the (empty) history slice and the error, so caller knows an attempt was made.
-		return history, fmt.Errorf("获取会话历史(ASH)失败: %w", err)
+		return history, fmt.Errorf("failed to get session history (ASH): %w", err)
 	}
-	logger.Infof("成功获取 %d 个会话的等待事件统计信息。", len(history))
-	//logger.Debugf("会话历史信息: %v", history)
+	logger.Infof("Successfully fetched %d session history points.", len(history))
+	//logger.Debugf("Session history info: %v", history)
 	return history, nil
 }
 
-// GetSessionDetails 获取所有会话相关信息
-// 返回 AllSessionInfo 以及每个子查询的独立错误状态
+// GetSessionDetails gets all session-related information
+// Returns AllSessionInfo and a separate error status for each sub-query
 func GetSessionDetails(db *sql.DB) (allInfo *AllSessionInfo, overviewErr error, eventErr error, historyErr error) {
-	logger.Info("开始获取会话模块信息...")
+	logger.Info("Starting to fetch session module information...")
 	allInfo = &AllSessionInfo{}
 
 	allInfo.Overview, overviewErr = getCurrentSessionOverview(db)
 	if overviewErr != nil {
-		logger.Warnf("获取会话概述时出错: %v", overviewErr)
+		logger.Warnf("Error fetching session overview: %v", overviewErr)
 		// overviewErr is returned directly
 	}
 
 	allInfo.ByEvent, eventErr = getSessionCountByEvent(db)
 	if eventErr != nil {
-		logger.Warnf("获取按事件统计的会话时出错: %v", eventErr)
+		logger.Warnf("Error fetching session count by event: %v", eventErr)
 		// eventErr is returned directly
 	}
 
 	allInfo.HistoryForChart, historyErr = getDailySessionHistory(db)
 	if historyErr != nil {
-		logger.Warnf("获取会话历史图表数据时出错: %v", historyErr)
+		logger.Warnf("Error fetching session history for chart: %v", historyErr)
 		// historyErr is returned directly. ASH data is often considered optional.
 	}
 
-	logger.Info("会话模块信息获取完成。")
+	logger.Info("Session module information fetching complete.")
 	// The function now returns individual errors. The caller can decide how to handle them.
 	// A general error is no longer aggregated here unless a specific design requires it.
 	return

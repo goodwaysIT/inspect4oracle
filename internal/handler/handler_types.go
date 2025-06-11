@@ -2,15 +2,15 @@ package handler
 
 // ReportData 结构用于模板渲染
 type ReportData struct {
-	DBFullInfo     string          `json:"dbFullInfo,omitempty"` // 数据库完整信息，例如 "ORCL (v19.3.0.0.0) @ dbhost.example.com"
+	DBFullInfo     string          `json:"dbFullInfo,omitempty"` // Full database information, e.g., "ORCL (v19.3.0.0.0) @ dbhost.example.com"
 	Lang           string          // 语言字段: "zh" 或 "en"
 	Title          string          // 报告主标题
-	BusinessName   string          // 用户输入的业务系统名称
-	DBName         string          // 当前巡检的数据库名，用于下载文件名和报告标题部分
-	DBConnection   string          // 数据库连接信息，格式为 ip:port/servicename
+	BusinessName   string          // Business system name entered by the user
+	DBName         string          // Name of the currently inspected database, used for download filenames and report titles
+	DBConnection   string          // Database connection string, format: ip:port/servicename
 	GeneratedAt    string          // 报告生成时间
-	Modules        []ReportModule  // 报告包含的各个模块数据
-	ReportSections []ReportSection // 用于左侧导航菜单的模块列表
+	Modules        []ReportModule  // Data for each module included in the report
+	ReportSections []ReportSection // List of modules for the left navigation menu
 }
 
 // ReportSection 结构用于定义报告的左侧导航菜单项
@@ -19,7 +19,7 @@ type ReportSection struct {
 	Name string // 对应 ReportModule 的 Name
 }
 
-// ParsedDSN 结构用于存储从Oracle连接字符串中解析出来的信息
+// ParsedDSN struct stores information parsed from an Oracle connection string
 type ParsedDSN struct {
 	User        string
 	Password    string
@@ -27,5 +27,5 @@ type ParsedDSN struct {
 	Port        string
 	SID         string
 	ServiceName string
-	IsValid     bool // 标记DSN是否成功解析出主机和端口
+	IsValid     bool // Mark if DSN successfully parsed host and port
 }

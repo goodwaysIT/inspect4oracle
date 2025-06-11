@@ -24,7 +24,7 @@ type ConnectionDetails struct {
 // Connect establishes a connection to the Oracle database using the provided details.
 // It returns a sql.DB object or an error if the connection fails.
 func Connect(details ConnectionDetails) (*sql.DB, error) {
-	// 设置连接超时时间为30秒
+	// Set connection timeout to 30 seconds
 	urlOptions := map[string]string{
 		"CONNECTION TIMEOUT": "30",
 	}
@@ -107,13 +107,13 @@ func ValidatePrivileges(db *sql.DB) ([]PrivilegeCheckResult, error) {
 		err := db.QueryRow(query).Scan(&count)
 
 		if err != nil {
-			// 检查错误类型，如果是权限不足，则记录并继续
+			// Check the error type, if it's insufficient privileges, log it and continue
 			if strings.Contains(strings.ToUpper(err.Error()), "ORA-00942") || // 表或视图不存在
 				strings.Contains(strings.ToUpper(err.Error()), "ORA-01031") { // 权限不足
-				logger.Debug(fmt.Sprintf("对视图 '%s' 的权限检查失败: %s", view, err.Error()))
+				logger.Debug(fmt.Sprintf("Permission check failed for view '%s': %s", view, err.Error()))
 				result.Error = fmt.Sprintf("视图 '%s' 权限不足或对象不存在", view)
 			} else {
-				logger.Debug(fmt.Sprintf("权限检查失败: %s", err.Error()))
+				logger.Debug(fmt.Sprintf("Permission check failed: %s", err.Error()))
 				result.Error = err.Error()
 			}
 		} else {
@@ -131,13 +131,13 @@ func CheckDatabaseConnection(db *sql.DB) (bool, []PrivilegeCheckResult, error) {
 	// 首先验证连接是否有效
 	err := db.Ping()
 	if err != nil {
-		return false, nil, fmt.Errorf("数据库连接失败: %v", err)
+		return false, nil, fmt.Errorf("database connection failed: %v", err)
 	}
 
 	// 检查权限
 	privilegeResults, err := ValidatePrivileges(db)
 	if err != nil {
-		return true, privilegeResults, fmt.Errorf("权限检查失败: %v", err)
+		return true, privilegeResults, fmt.Errorf("permission check failed: %v", err)
 	}
 
 	// 检查是否有任何关键视图没有访问权限

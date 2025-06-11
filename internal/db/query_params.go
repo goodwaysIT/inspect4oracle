@@ -17,7 +17,7 @@ func GetParameterList(db *sql.DB) ([]ParameterInfo, error) {
 	var result []ParameterInfo
 	err := ExecuteQueryAndScanToStructs(db, &result, query)
 	if err != nil {
-		return nil, fmt.Errorf("GetParameterList 使用 ExecuteQueryAndScanToStructs 失败: %w", err)
+		return nil, fmt.Errorf("GetParameterList failed using ExecuteQueryAndScanToStructs: %w", err)
 	}
 
 	return result, nil

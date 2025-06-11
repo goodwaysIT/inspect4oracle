@@ -10,23 +10,23 @@ import (
 	"github.com/goodwaysIT/inspect4oracle/internal/logger"
 )
 
-// StorageInfo 包含所有存储相关的信息
+// StorageInfo contains all storage-related information
 type StorageInfo struct {
 	ControlFiles        []ControlFileInfo
 	RedoLogs            []RedoLogInfo
 	DataFiles           []DataFileInfo
 	Tablespaces         []TablespaceInfo
-	ArchivedLogsSummary []ArchivedLogSummary // 过去7天每天的归档量
-	ASMDiskgroups       []ASMDiskgroupInfo   // 如果使用ASM
+	ArchivedLogsSummary []ArchivedLogSummary // Daily archive volume for the past 7 days
+	ASMDiskgroups       []ASMDiskgroupInfo   // If ASM is used
 }
 
-// ControlFileInfo 存储控制文件的信息
+// ControlFileInfo stores information about control files
 type ControlFileInfo struct {
 	Name   string  `db:"NAME"` // Assuming column name is NAME
 	SizeMB float64 `db:"SIZE_MB"`
 }
 
-// RedoLogInfo 存储 Redo 日志组和成员的信息
+// RedoLogInfo stores information about Redo log groups and members
 type RedoLogInfo struct {
 	GroupNo    int     `db:"GROUP_NO"`
 	ThreadNo   int     `db:"THREAD_NO"`
@@ -39,7 +39,7 @@ type RedoLogInfo struct {
 	Type       string  `db:"TYPE"`     // Assuming column name is TYPE
 }
 
-// DataFileInfo 存储数据文件的信息
+// DataFileInfo stores information about data files
 type DataFileInfo struct {
 	FileID         int     `db:"FILE_ID"`
 	FileName       string  `db:"FILE_NAME"`
@@ -49,7 +49,7 @@ type DataFileInfo struct {
 	Autoextensible string  `db:"AUTOEXTENSIBLE"` // Assuming column name is AUTOEXTENSIBLE
 }
 
-// TablespaceInfo 存储表空间的使用情况
+// TablespaceInfo stores tablespace usage information
 type TablespaceInfo struct {
 	Status                 string  `db:"STATUS"`
 	Name                   string  `db:"TABLESPACE_NAME"`
@@ -62,14 +62,14 @@ type TablespaceInfo struct {
 	CanExtendMB            float64 `db:"CANEXTEND_SIZE_MB"`
 }
 
-// ArchivedLogSummary 存储每日归档日志的摘要信息
+// ArchivedLogSummary stores summary information for daily archived logs
 type ArchivedLogSummary struct {
 	Day         string // YYYY-MM-DD
 	LogCount    int
 	TotalSizeMB float64
 }
 
-// ASMDiskgroupInfo 存储 ASM 磁盘组的信息
+// ASMDiskgroupInfo stores information about ASM diskgroups
 type ASMDiskgroupInfo struct {
 	Name           string
 	TotalMB        int64
@@ -79,64 +79,64 @@ type ASMDiskgroupInfo struct {
 	RedundancyType string
 }
 
-// GetStorageInfo 获取所有存储相关信息
-// dbVersion 用于判断某些查询是否适用 (例如 ASM 相关视图在特定版本后才广泛使用)
-// logMode 用于判断是否查询归档日志 (例如 NOARCHIVELOG 模式下归档日志不相关)
+// GetStorageInfo fetches all storage-related information
+// dbVersion is used to determine if certain queries are applicable (e.g., ASM-related views are widely used after specific versions)
+// logMode is used to determine whether to query archive logs (e.g., archive logs are irrelevant in NOARCHIVELOG mode)
 func GetStorageInfo(db *sql.DB) (*StorageInfo, error) {
-	logger.Info("开始获取存储信息...")
+	logger.Info("Starting to fetch storage information...")
 	startTime := time.Now()
 	storageInfo := &StorageInfo{}
 	var err error
 
-	// 1. 控制文件
+	// 1. Control Files
 	storageInfo.ControlFiles, err = getControlFiles(db)
 	if err != nil {
-		logger.Warnf("获取控制文件信息失败: %v. 继续处理其他存储项.", err)
-		// 不中断，记录错误并继续
+		logger.Warnf("Failed to get control file info: %v. Continuing with other storage items.", err)
+		// Do not interrupt, log the error and continue
 	}
 
-	// 2. Redo 日志
+	// 2. Redo Logs
 	storageInfo.RedoLogs, err = getRedoLogs(db)
 	if err != nil {
-		logger.Warnf("获取Redo日志信息失败: %v. 继续处理其他存储项.", err)
+		logger.Warnf("Failed to get redo log info: %v. Continuing with other storage items.", err)
 	}
 
-	// 3. 数据文件
+	// 3. Data Files
 	storageInfo.DataFiles, err = getDataFiles(db)
 	if err != nil {
-		logger.Warnf("获取数据文件信息失败: %v. 继续处理其他存储项.", err)
+		logger.Warnf("Failed to get data file info: %v. Continuing with other storage items.", err)
 	}
 
-	// 4. 表空间使用情况
+	// 4. Tablespace Usage
 	storageInfo.Tablespaces, err = getTablespaceUsage(db)
 	if err != nil {
-		logger.Warnf("获取表空间使用情况失败: %v. 继续处理其他存储项.", err)
+		logger.Warnf("Failed to get tablespace usage: %v. Continuing with other storage items.", err)
 	}
 
-	// 5. 归档日志摘要 (仅在 ARCHIVELOG 模式下有意义)
+	// 5. Archived Log Summary (only meaningful in ARCHIVELOG mode)
 
 	storageInfo.ArchivedLogsSummary, err = getArchivedLogSummary(db)
 	if err != nil {
-		logger.Warnf("获取归档日志摘要失败: %v. 继续处理其他存储项.", err)
+		logger.Warnf("Failed to get archived log summary: %v. Continuing with other storage items.", err)
 	}
 
-	// 6. ASM 磁盘组 (通常需要特定权限，且仅当使用ASM时)
-	// 简单检查版本，实际可能需要更复杂的逻辑判断是否为ASM环境
-	// 例如，检查 'asm instance' 参数或尝试查询 v$asm_diskgroup，如果失败则跳过
+	// 6. ASM Diskgroups (usually require specific permissions and only when using ASM)
+	// Simple version check, in practice more complex logic may be needed to determine the ASM environment
+	// For example, check the 'asm instance' parameter or try to query v$asm_diskgroup, and skip if it fails
 	isASM, errAsmCheck := checkASMInstance(db)
 	if errAsmCheck != nil {
-		logger.Warnf("检查ASM环境失败: %v. 跳过ASM磁盘组查询.", errAsmCheck)
+		logger.Warnf("Failed to check ASM environment: %v. Skipping ASM diskgroup query.", errAsmCheck)
 	} else if isASM {
 		storageInfo.ASMDiskgroups, err = getASMDiskgroupInfo(db)
 		if err != nil {
-			logger.Warnf("获取ASM磁盘组信息失败: %v. 继续处理其他存储项.", err)
+			logger.Warnf("Failed to get ASM diskgroup info: %v. Continuing with other storage items.", err)
 		}
 	} else {
-		logger.Info("未检测到或无法确认ASM环境，跳过ASM磁盘组查询。")
+		logger.Info("ASM environment not detected or cannot be confirmed, skipping ASM diskgroup query.")
 	}
 
-	logger.Infof("获取存储信息完成, 耗时: %s", time.Since(startTime))
-	return storageInfo, nil // 返回收集到的信息，即使部分查询失败
+	logger.Infof("Finished fetching storage information, elapsed time: %s", time.Since(startTime))
+	return storageInfo, nil // Return the collected information, even if some queries fail
 }
 
 func getControlFiles(db *sql.DB) ([]ControlFileInfo, error) {
@@ -144,10 +144,10 @@ func getControlFiles(db *sql.DB) ([]ControlFileInfo, error) {
 	query := "SELECT NAME, round(BLOCK_SIZE*FILE_SIZE_BLKS/1024/1024) AS SIZE_MB FROM V$CONTROLFILE"
 	err := ExecuteQueryAndScanToStructs(db, &files, query)
 	if err != nil {
-		return nil, fmt.Errorf("获取控制文件信息失败 (generic scan): %w", err)
+		return nil, fmt.Errorf("failed to get control file info (generic scan): %w", err)
 	}
-	logger.Infof("成功获取 %d 个控制文件信息。", len(files))
-	logger.Debugf("控制文件信息: %v", files)
+	logger.Infof("Successfully fetched info for %d control files.", len(files))
+	logger.Debugf("Control file info: %v", files)
 	return files, nil
 }
 
@@ -170,10 +170,10 @@ ORDER BY g.GROUP#, l.MEMBER`
 
 	err := ExecuteQueryAndScanToStructs(db, &logs, query)
 	if err != nil {
-		return nil, fmt.Errorf("获取Redo日志信息失败 (generic scan): %w", err)
+		return nil, fmt.Errorf("failed to get redo log info (generic scan): %w", err)
 	}
-	logger.Infof("成功获取 %d 个Redo日志信息。", len(logs))
-	logger.Debugf("Redo日志信息: %v", logs)
+	logger.Infof("Successfully fetched info for %d redo logs.", len(logs))
+	logger.Debugf("Redo log info: %v", logs)
 	return logs, nil
 }
 
@@ -201,10 +201,10 @@ ORDER BY TABLESPACE_NAME, FILE_ID`
 	var files []DataFileInfo
 	err := ExecuteQueryAndScanToStructs(db, &files, query)
 	if err != nil {
-		return nil, fmt.Errorf("获取数据文件信息失败 (generic scan): %w", err)
+		return nil, fmt.Errorf("failed to get data file info (generic scan): %w", err)
 	}
-	logger.Infof("成功获取 %d 个数据文件信息。", len(files))
-	logger.Debugf("数据文件信息: %v", files)
+	logger.Infof("Successfully fetched info for %d data files.", len(files))
+	logger.Debugf("Data file info: %v", files)
 	return files, nil
 }
 
@@ -287,8 +287,8 @@ SELECT
 	// 执行永久和UNDO表空间查询
 	errPU = ExecuteQueryAndScanToStructs(db, &permUndoTablespaces, queryPermanentUndo)
 	if errPU != nil {
-		logger.Errorf("查询永久/UNDO表空间使用情况失败 (generic scan): %v", errPU)
-		// 不立即返回错误，尝试查询临时表空间
+		logger.Errorf("Failed to query permanent/UNDO tablespace usage (generic scan): %v", errPU)
+		// Do not return an error immediately, try to query the temporary tablespace
 	} else {
 		tablespaces = append(tablespaces, permUndoTablespaces...)
 	}
@@ -296,23 +296,23 @@ SELECT
 	// 执行临时表空间查询
 	errTemp = ExecuteQueryAndScanToStructs(db, &tempTablespaces, queryTemporary)
 	if errTemp != nil {
-		logger.Errorf("查询临时表空间使用情况失败 (generic scan): %v", errTemp)
+		logger.Errorf("Failed to query temporary tablespace usage (generic scan): %v", errTemp)
 	} else {
 		tablespaces = append(tablespaces, tempTablespaces...)
 	}
 
-	if errPU != nil && errTemp != nil { // 如果两个查询都失败了
-		return nil, fmt.Errorf("获取所有表空间信息均失败。永久/UNDO错误: %v; 临时错误: %v", errPU, errTemp)
+	if errPU != nil && errTemp != nil { // If both queries fail
+		return nil, fmt.Errorf("failed to get any tablespace information. Permanent/UNDO error: %v; Temp error: %v", errPU, errTemp)
 	}
 
-	logger.Infof("成功获取 %d 个表空间的使用情况信息。", len(tablespaces))
-	logger.Debugf("表空间信息: %v", tablespaces)
+	logger.Infof("Successfully fetched usage info for %d tablespaces.", len(tablespaces))
+	logger.Debugf("Tablespace info: %v", tablespaces)
 	return tablespaces, nil
 }
 
 func getArchivedLogSummary(db *sql.DB) ([]ArchivedLogSummary, error) {
-	// 查询过去7天每天的归档日志数量和大小
-	// COMPLETION_TIME 是归档完成的时间。
+	// Query the number and size of archived logs per day for the past 7 days.
+	// COMPLETION_TIME is the time when archiving was completed.
 	query := `
 SELECT
     TO_CHAR(TRUNC(COMPLETION_TIME), 'YYYY-MM-DD') AS Day,
@@ -326,45 +326,45 @@ ORDER BY Day DESC`
 	var summaries []ArchivedLogSummary
 	err := ExecuteQueryAndScanToStructs(db, &summaries, query)
 	if err != nil {
-		// 可能是视图权限问题，或者非归档模式下视图为空但查询本身不报错
-		return nil, fmt.Errorf("获取归档日志摘要失败 (generic scan): %w。请检查权限或确认数据库是否处于ARCHIVELOG模式。", err)
+		// It could be a view permission issue, or the view is empty in non-archivelog mode but the query itself does not report an error
+		return nil, fmt.Errorf("failed to get archived log summary (generic scan): %w. Please check permissions or confirm the database is in ARCHIVELOG mode.", err)
 	}
 
-	logger.Infof("成功获取 %d 天的归档日志摘要。", len(summaries))
-	logger.Debugf("归档日志摘要: %v", summaries) // Changed Debug to Debugf
+	logger.Infof("Successfully fetched archived log summary for %d days.", len(summaries))
+	logger.Debugf("Archived log summary: %v", summaries) // Changed Debug to Debugf
 	return summaries, nil
 }
 
 func checkASMInstance(db *sql.DB) (bool, error) {
 	var result string
-	// 尝试查询一个只在ASM实例上通常有特定值的参数或视图
-	// 例如，可以检查 instance_type，或者直接尝试查询 v$asm_diskgroup 并捕获错误
-	// 这里用一个简单的方法：检查是否存在 V$ASM_DISKGROUP 视图（通过尝试查询）
-	// 注意：即使不是ASM实例，查询一个不存在的表/视图也会报错，但错误类型可能不同。
-	// 一个更可靠的方法是查询 GV$INSTANCE 的 INSTANCE_ROLE 是否包含 'ASM STORAGE INSTANCE'
+	// Try to query a parameter or view that typically has a specific value only on an ASM instance.
+	// For example, one could check instance_type, or directly try to query v$asm_diskgroup and catch the error
+	// A simple method is used here: check if the V$ASM_DISKGROUP view exists (by attempting to query it).
+	// Note: Even if it's not an ASM instance, querying a non-existent table/view will also result in an error, but the error type may differ.
+	// A more reliable method is to query if GV$INSTANCE's INSTANCE_ROLE contains 'ASM STORAGE INSTANCE'.
 	// 或者查询参数 CLUSTER_INTERCONNECTS (如果RAC+ASM)
-	// 或者直接尝试查询 V$ASM_DISKGROUP，如果报错 "ORA-00942: table or view does not exist"，则认为不是ASM或无权限
-	// 如果是其他错误，则可能是连接问题等。
+	// Alternatively, try to query V$ASM_DISKGROUP directly. If it reports "ORA-00942: table or view does not exist", it is considered not to be ASM or to have no permissions
+	// If it is another error, it may be a connection issue, etc.
 
-	// 简化：尝试查询 V$ASM_DISKGROUP，如果成功（即使返回0行），则认为是ASM环境或有权限访问。
-	// 如果报错 ORA-00942，则认为不是ASM或无权限。
+	// Simplified: Try to query V$ASM_DISKGROUP, if successful (even if 0 rows are returned), it is considered an ASM environment or has access rights.
+	// If ORA-00942 is reported, it is considered not to be ASM or to have no permissions.
 	err := db.QueryRow("SELECT COUNT(*) FROM V$ASM_DISKGROUP").Scan(&result)
 	if err != nil {
 		if strings.Contains(err.Error(), "ORA-00942") { // ORA-00942: table or view does not exist
-			logger.Info("V$ASM_DISKGROUP 视图不存在或无权限访问，假定非ASM环境或无法查询ASM信息。")
-			return false, nil // 不是错误，只是说明情况
+			logger.Info("V$ASM_DISKGROUP view does not exist or no access permission, assuming non-ASM environment or unable to query ASM information.")
+			return false, nil // Not an error, just stating the situation
 		}
-		// 其他错误，可能是连接问题等
-		return false, fmt.Errorf("尝试访问 V$ASM_DISKGROUP 失败: %w", err)
+		// Other errors, may be connection issues, etc.
+		return false, fmt.Errorf("failed to access V$ASM_DISKGROUP: %w", err)
 	}
-	// 如果查询成功，即使返回0行，也认为视图存在，可能是ASM环境
-	logger.Info("成功访问 V$ASM_DISKGROUP，可能为ASM环境。")
+	// If the query is successful, even if it returns 0 rows, the view is considered to exist, possibly an ASM environment
+	logger.Info("Successfully accessed V$ASM_DISKGROUP, it might be an ASM environment.")
 	return true, nil
 }
 
 func getASMDiskgroupInfo(db *sql.DB) ([]ASMDiskgroupInfo, error) {
 	// 注意：查询V$ASM_DISKGROUP通常需要连接到ASM实例，或者通过DB link从数据库实例访问。
-	// 这里的实现假设DB连接已经能够访问到V$ASM_DISKGROUP视图。
+	// The implementation here assumes that the DB connection can already access the V$ASM_DISKGROUP view.
 	// Aliased columns for direct mapping and clarity.
 	query := `
 SELECT
@@ -380,15 +380,15 @@ ORDER BY name`
 	var diskgroups []ASMDiskgroupInfo
 	err := ExecuteQueryAndScanToStructs(db, &diskgroups, query)
 	if err != nil {
-		return nil, fmt.Errorf("获取ASM磁盘组信息失败 (generic scan): %w. 请确认连接用户有权限访问此视图，并且数据库环境配置正确。", err)
+		return nil, fmt.Errorf("failed to get ASM diskgroup info (generic scan): %w. Please confirm the connected user has permission to access this view and the database environment is configured correctly.", err)
 	}
 
 	if len(diskgroups) == 0 {
-		logger.Info("未从V$ASM_DISKGROUP获取到ASM磁盘组信息。可能未使用ASM，或无数据，或无权限。")
+		logger.Info("No ASM diskgroup information was obtained from V$ASM_DISKGROUP. ASM might not be in use, there might be no data, or permissions might be lacking.")
 	}
 
-	logger.Infof("成功获取 %d 个ASM磁盘组信息。", len(diskgroups))
-	logger.Debugf("ASM磁盘组信息: %v", diskgroups)
+	logger.Infof("Successfully fetched info for %d ASM diskgroups.", len(diskgroups))
+	logger.Debugf("ASM diskgroup info: %v", diskgroups)
 	return diskgroups, nil
 }
 

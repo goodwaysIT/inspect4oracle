@@ -20,13 +20,13 @@ import (
 	"github.com/goodwaysIT/inspect4oracle/internal/logger"
 )
 
-// reportStore 用于存储生成的报告
+// reportStore is used to store generated reports
 var (
 	reportStore      = make(map[string]ReportData)
 	reportStoreMutex sync.RWMutex
 )
 
-// GetReportStatusHandler 处理获取报告状态的API请求，返回JSON
+// GetReportStatusHandler handles API requests to get report status, returns JSON.
 func GetReportStatusHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		reportId := r.URL.Query().Get("id")
@@ -66,7 +66,7 @@ func GetReportStatusHandler() http.HandlerFunc {
 	}
 }
 
-// ViewReportHandler 处理报告查看请求 (渲染HTML)
+// ViewReportHandler handles report view requests (renders HTML).
 func ViewReportHandler(content embed.FS) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		reportId := r.URL.Query().Get("id")
@@ -90,7 +90,7 @@ func ViewReportHandler(content embed.FS) http.HandlerFunc {
 		nonceBytes := make([]byte, 16)
 		_, err := rand.Read(nonceBytes)
 		if err != nil {
-			log.Printf("警告: 生成 CSP Nonce 失败: %v", err)
+			log.Printf("Warning: Failed to generate CSP Nonce: %v", err)
 		}
 		cspNonce := base64.RawURLEncoding.EncodeToString(nonceBytes)
 		if err != nil {
@@ -98,8 +98,8 @@ func ViewReportHandler(content embed.FS) http.HandlerFunc {
 		}
 
 		templateData := map[string]interface{}{
-			"DbInfo":         reportData.BusinessName, // 使用业务名称
-			"ActualDBName":   reportData.DBName,       // 如果需要在模板其他地方显示实际数据库名，可以添加这个
+			"DbInfo":         reportData.BusinessName, // Use business name
+			"ActualDBName":   reportData.DBName,       // Add this if you need to display the actual database name elsewhere in the template
 			"DbConnection":   reportData.DBConnection,
 			"GeneratedAt":    reportData.GeneratedAt,
 			"Modules":        reportData.Modules,
@@ -122,13 +122,13 @@ func ViewReportHandler(content embed.FS) http.HandlerFunc {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := tmpl.ExecuteTemplate(w, "layout", templateData); err != nil {
 			http.Error(w, "无法执行模板: "+err.Error(), http.StatusInternalServerError)
-			log.Printf("CRITICAL: 模板执行错误 (ViewReportHandler): %v.", err)
+			log.Printf("CRITICAL: Template execution error (ViewReportHandler): %v.", err)
 			return
 		}
 	}
 }
 
-// DBConnectionRequest 定义数据库连接请求结构体
+// DBConnectionRequest defines the database connection request structure
 type DBConnectionRequest struct {
 	Business string   `json:"business"`
 	Host     string   `json:"host"`
@@ -140,28 +140,28 @@ type DBConnectionRequest struct {
 	Lang     string   `json:"lang"`
 }
 
-// parseInspectRequest 解析巡检请求中的参数
-// 它支持 JSON, x-www-form-urlencoded, 和 multipart/form-data 类型的请求
-// 返回 DBConnectionRequest 结构体和可能发生的错误
+// parseInspectRequest parses parameters from the inspection request.
+// It supports JSON, x-www-form-urlencoded, and multipart/form-data request types.
+// Returns a DBConnectionRequest struct and any potential error.
 func parseInspectRequest(r *http.Request) (*DBConnectionRequest, error) {
 	var req DBConnectionRequest
 
 	contentType := r.Header.Get("Content-Type")
 	if strings.HasPrefix(contentType, "application/json") {
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			logger.Error(fmt.Sprintf("解析 JSON 请求体失败: %v", err))
-			return nil, fmt.Errorf("无效的请求体: %w", err)
+			logger.Error(langText("Failed to parse JSON request body: %v", "Failed to parse JSON request body: %v", "Failed to parse JSON request body: %v", req.Lang), err)
+			return nil, fmt.Errorf("Failed to parse JSON request body: %w", err)
 		}
 	} else if strings.HasPrefix(contentType, "application/x-www-form-urlencoded") || strings.HasPrefix(contentType, "multipart/form-data") {
 		if strings.HasPrefix(contentType, "multipart/form-data") {
 			if err := r.ParseMultipartForm(32 << 20); err != nil { // 32MB 最大内存
-				logger.Error(fmt.Sprintf("解析 multipart 表单数据失败: %v", err))
-				return nil, fmt.Errorf("解析 multipart 表单数据失败: %w", err)
+				logger.Error(langText("Failed to parse multipart form data: %v", "Failed to parse multipart form data: %v", "Failed to parse multipart form data: %v", req.Lang), err)
+				return nil, fmt.Errorf("Failed to parse multipart form data: %w", err)
 			}
 		} else {
 			if err := r.ParseForm(); err != nil {
-				logger.Error(fmt.Sprintf("解析表单数据失败: %v", err))
-				return nil, fmt.Errorf("解析表单数据失败: %w", err)
+				logger.Error(langText("Failed to parse form data: %v", "Failed to parse form data: %v", "Failed to parse form data: %v", req.Lang), err)
+				return nil, fmt.Errorf("Failed to parse form data: %w", err)
 			}
 		}
 		req.Host = r.FormValue("host")
@@ -172,25 +172,25 @@ func parseInspectRequest(r *http.Request) (*DBConnectionRequest, error) {
 		req.Lang = r.FormValue("lang")
 		req.Business = r.FormValue("business")
 
-		// 处理 items 参数，它可能以两种形式出现：
-		// 1. items=item1,item2,item3 (单个字符串，逗号分隔)
-		// 2. items=item1&items=item2&items=item3 (多个同名参数)
+		// Handle the 'items' parameter, which can appear in two forms:
+		// 1. items=item1,item2,item3 (single comma-separated string)
+		// 2. items=item1&items=item2&items=item3 (multiple parameters with the same name)
 		if r.Form["items"] != nil {
-			// 检查是否是单个逗号分隔的字符串
+			// Check if it's a single comma-separated string
 			if len(r.Form["items"]) == 1 && strings.Contains(r.Form["items"][0], ",") {
 				req.Items = strings.Split(r.Form["items"][0], ",")
 			} else {
-				// 否则，视为多个同名参数
+				// Otherwise, treat as multiple parameters with the same name
 				req.Items = r.Form["items"]
 			}
 		} else {
-			// 兼容旧的 items[] 写法，虽然标准做法是 items
+			// Compatible with the old items[] notation, although the standard is 'items'
 			formItems := r.Form["items[]"]
 			if len(formItems) > 0 {
 				req.Items = formItems
 			} else {
-				// 如果 items 和 items[] 都没有，则尝试从单个 item 字段获取（如果存在）
-				// 这主要为了兼容早期可能的错误表单提交方式
+				// If neither 'items' nor 'items[]' are present, try to get from a single 'item' field (if it exists)
+				// This is mainly for compatibility with potentially incorrect form submissions from earlier versions
 				singleItem := r.FormValue("item")
 				if singleItem != "" {
 					req.Items = []string{singleItem}
@@ -199,25 +199,25 @@ func parseInspectRequest(r *http.Request) (*DBConnectionRequest, error) {
 		}
 
 	} else {
-		logger.Error(fmt.Sprintf("不支持的 Content-Type: %s", contentType))
-		return nil, fmt.Errorf("不支持的 Content-Type: %s", contentType)
+		logger.Error(langText("Unsupported Content-Type: %s", "Unsupported Content-Type: %s", "Unsupported Content-Type: %s", req.Lang), contentType)
+		return nil, fmt.Errorf("Unsupported Content-Type: %s", contentType)
 	}
 	return &req, nil
 }
 
-// validateInspectParameters 校验巡检请求参数
+// validateInspectParameters validates the inspection request parameters
 func validateInspectParameters(req *DBConnectionRequest) error {
 	if req.Host == "" || req.Port == "" || req.Service == "" || req.Username == "" {
-		return fmt.Errorf("主机、端口、服务名和用户名不能为空")
+		return fmt.Errorf("Host, port, service name and username cannot be empty")
 	}
 	if len(req.Items) == 0 {
-		return fmt.Errorf("巡检项不能为空")
+		return fmt.Errorf("Inspection items cannot be empty")
 	}
-	// 可以在这里添加更多校验逻辑，例如端口号格式等
+	// More validation logic can be added here, e.g., port number format.
 	return nil
 }
 
-// handleRequestValidation 解析并校验巡检请求
+// handleRequestValidation parses and validates the inspection request
 func handleRequestValidation(r *http.Request) (*DBConnectionRequest, error) {
 	contentType := r.Header.Get("Content-Type")
 	logger.Infof("InspectHandler received request with Content-Type: %s", contentType)
@@ -228,7 +228,7 @@ func handleRequestValidation(r *http.Request) (*DBConnectionRequest, error) {
 	}
 
 	logger.Infof("Parsed inspection request: Business='%s', Host='%s', Port='%s', Service='%s', Username='%s', ItemsCount=%d, Lang='%s'",
-		req.Business, req.Host, req.Port, req.Service, req.Username, len(req.Items), req.Lang)
+			req.Business, req.Host, req.Port, req.Service, req.Username, len(req.Items), req.Lang)
 
 	if err := validateInspectParameters(req); err != nil {
 		return nil, fmt.Errorf("invalid parameters for request (Business='%s', Host='%s', Port='%s', Service='%s', Username='%s', ItemsCount=%d, Lang='%s'): %w",
@@ -237,7 +237,7 @@ func handleRequestValidation(r *http.Request) (*DBConnectionRequest, error) {
 	return req, nil
 }
 
-// establishDBConnection 建立数据库连接并获取基础信息
+// establishDBConnection establishes a database connection and retrieves basic information
 func establishDBConnection(req *DBConnectionRequest) (*sql.DB, *db.FullDBInfo, error) {
 	portInt, convErr := strconv.Atoi(req.Port)
 	if convErr != nil {
@@ -264,19 +264,19 @@ func establishDBConnection(req *DBConnectionRequest) (*sql.DB, *db.FullDBInfo, e
 	return dbConn, fullDBInfo, nil
 }
 
-// processInspectionModules 处理所有选定的巡检模块
+// processInspectionModules processes all selected inspection modules.
 func processInspectionModules(items []string, dbConn *sql.DB, lang string, fullDBInfo *db.FullDBInfo) []ReportModule {
 	var modules []ReportModule
 	for _, item := range items {
 		module, err := ProcessInspectionItem(item, dbConn, lang, fullDBInfo)
 		if err != nil {
-			logger.Error(fmt.Sprintf("处理巡检项 %s 时出错: %v", item, err))
+			logger.Error(langText("Error processing inspection item %s: %v", "Error processing inspection item %s: %v", "Error processing inspection item %s: %v", lang), item, err)
 			module = ReportModule{
 				ID:   item,
 				Name: item,
 				Cards: []ReportCard{{
 					Title: "Error",
-					Value: fmt.Sprintf("处理巡检项时出错: %v", err),
+					Value: fmt.Sprintf("Error processing inspection item: %v", err),
 				}},
 			}
 		}
@@ -330,12 +330,12 @@ func storeAndRespond(w http.ResponseWriter, reportID string, reportData ReportDa
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		logger.Error(fmt.Sprintf("Error encoding response: %v", err))
+		logger.Error(fmt.Sprintf("Failed to store report and send response: %v", err))
 		// If encoding fails, it's hard to send a meaningful HTTP error
 	}
 }
 
-// InspectHandler 处理巡检请求
+// InspectHandler handles inspection requests.
 func InspectHandler(debug bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -359,7 +359,7 @@ func InspectHandler(debug bool) http.HandlerFunc {
 		defer func() {
 			if dbConn != nil {
 				if err := dbConn.Close(); err != nil {
-					logger.Error(fmt.Sprintf("Error closing database connection: %v", err))
+					logger.Error(fmt.Sprintf("Failed to close database connection: %v", err))
 				}
 			}
 		}()

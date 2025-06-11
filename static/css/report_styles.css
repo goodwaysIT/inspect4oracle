@@ -1,21 +1,21 @@
-  /* 全局样式 - 使用专业的配色和字体 */
+  /* Global Styles - Using professional color schemes and fonts */
   :root {
     --sidebar-width: 280px;  /* 侧边栏宽度 */
     --header-height: 60px;   /* 顶部栏高度 */
-    --primary-blue: #1a73e8;  /* 主色调 - 更专业的蓝色 */
+    --primary-blue: #1a73e8;  /* Primary color - a more professional blue */
     --secondary-blue: #e8f0fe; /* 次色调 - 浅蓝色背景 */
-    --text-primary: #202124;  /* 主文本颜色 */
-    --text-secondary: #5f6368; /* 次要文本颜色 */
+    --text-primary: #202124;  /* Primary text color */
+    --text-secondary: #5f6368; /* Secondary text color */
     --border-color: #dadce0;  /* 边框颜色 */
     --card-shadow: 0 2px 6px rgba(60, 64, 67, 0.15); /* 卡片阴影 */
   }
   
   body {
-    background-color: #f5f7fa; /* 更细腻的背景色 */
+    background-color: #f5f7fa; /* A more refined background color */
     font-family: 'Roboto', 'Segoe UI', system-ui, -apple-system, sans-serif;
     color: var(--text-primary);
     line-height: 1.5;
-    font-size: 14px; /* DBA喜欢的紧凑字体大小 */
+    font-size: 14px; /* Compact font size preferred by DBAs */
   }
   
   /* 侧边栏样式 - 优化导航体验 */
@@ -28,7 +28,7 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
     z-index: 100;
     border-right: 1px solid var(--border-color);
-    padding-top: 0; /* 移除顶部的多余空白 */
+    padding-top: 0; /* Remove extra top padding */
     /* 添加滑动条样式 */
     scrollbar-width: thin;
     scrollbar-color: #dadce0 #f5f7fa;
@@ -47,7 +47,7 @@
     border-radius: 3px;
   }
   
-  /* 侧边栏顶部模块 - 增加风格化的标题区 */
+  /* Sidebar top module - stylized title area */
   .sidebar-header {
     padding: 12px 16px;
     background-color: var(--primary-blue);
@@ -76,7 +76,7 @@
     text-align: center;
   }
   
-  /* 激活状态 - 使用左侧边框标记，类似于很多DBA工具 */
+  /* Active state - marked with a left border, similar to many DBA tools */
   .sidebar .nav-link.active {
     color: var(--primary-blue);
     background-color: var(--secondary-blue);
@@ -129,7 +129,7 @@
     padding: 4px 8px;
   }
   
-  /* 主要信息卡片样式 - 更加专业的设计 */
+  /* Main info card style - a more professional design */
   .main-info-card {
     border-radius: 4px;
     border: none;
@@ -182,7 +182,7 @@
     color: var(--text-secondary);
   }
   
-  /* 数据表格样式 - DBA喜欢的紧凑表格 */
+  /* Data table style - compact table preferred by DBAs */
   .table-container {
     background-color: #ffffff;
     border-radius: 4px;
@@ -228,7 +228,7 @@
     background-color: rgba(0,0,0,0.02);
   }
   
-  /* 紧凑模式下的表格样式 */
+  /* Table style in compact mode */
   body.compact-mode .table {
     font-size: 12px;
   }

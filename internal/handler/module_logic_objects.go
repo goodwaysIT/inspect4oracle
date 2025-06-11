@@ -20,77 +20,75 @@ func appendError(existingErr, newErr error) error {
 }
 
 func processObjectsModule(dbConn *sql.DB, lang string) (cards []ReportCard, tables []*ReportTable, charts []ReportChart, overallErr error) {
-	logger.Infof("开始处理对象模块... 语言: %s", lang)
+	logger.Infof("Starting to process objects module... Language: %s", lang)
 
 	allDbObjectInfo, overviewErr, topSegmentsErr, invalidObjectsErr := db.GetObjectDetails(dbConn)
 
-	// 1. 处理对象类型统计
+	// 1. Process object type statistics
 	if overviewErr != nil {
-		logger.Errorf("处理对象模块 - 获取对象类型统计失败: %v", overviewErr)
+		logger.Errorf("Error processing objects module - failed to get object type statistics: %v", overviewErr)
 		cards = append(cards, ReportCard{
-			Title: langText("对象类型统计错误", "Object Type Count Error", lang),
-			Value: fmt.Sprintf(langText("获取对象类型统计失败: %v", "Failed to get object type counts: %v", lang), overviewErr),
+			Title: langText("Object Type Count Error", "Object Type Count Error", "Object Type Count Error", lang),
+			Value: fmt.Sprintf(langText("Failed to get object type counts: %v", "Failed to get object type counts: %v", "Failed to get object type counts: %v", lang), overviewErr),
 		})
 		overallErr = appendError(overallErr, overviewErr)
 	} else if allDbObjectInfo != nil && len(allDbObjectInfo.Overview) > 0 {
 		objCountTable := &ReportTable{
-			Name:    langText("对象类型统计", "Object Type Counts", lang),
-			Headers: []string{langText("所有者", "Owner", lang), langText("对象类型", "Object Type", lang), langText("数量", "Count", lang)}, // Added Owner header
+			Name:    langText("对象类型统计", "Object Type Counts", "オブジェクトタイプ統計", lang),
+			Headers: []string{langText("所有者", "Owner", "所有者", lang), langText("对象类型", "Object Type", "オブジェクトタイプ", lang), langText("数量", "Count", "数量", lang)}, // Added Owner header
 			Rows:    [][]string{},
 		}
 		for _, oc := range allDbObjectInfo.Overview {
-			row := []string{oc.Owner, oc.ObjectType, fmt.Sprintf("%d", oc.ObjectCount)} // Added oc.Owner, changed oc.Count to oc.ObjectCount
+			row := []string{oc.Owner, oc.ObjectType, fmt.Sprintf("%d", oc.ObjectCount)} 
 			objCountTable.Rows = append(objCountTable.Rows, row)
 		}
 		tables = append(tables, objCountTable)
 	} else {
 		cards = append(cards, ReportCard{
-			Title: langText("对象类型统计", "Object Type Counts", lang),
-			Value: langText("未查询到对象类型统计数据。", "No object type count data found.", lang),
+			Title: langText("Object Type Statistics", "Object Type Statistics", "Object Type Statistics", lang),
+			Value: langText("No object type statistics data available.", "No object type statistics data available.", "No object type statistics data available.", lang),
 		})
 	}
 
-	// 2. 处理 Top 段信息
+	// 2. Process Top Segments information
 	if topSegmentsErr != nil {
-		logger.Errorf("处理对象模块 - 获取 Top 段信息失败: %v", topSegmentsErr)
+		logger.Errorf("Error processing objects module - failed to get Top Segments information: %v", topSegmentsErr)
 		cards = append(cards, ReportCard{
-			Title: langText("Top段错误", "Top Segments Error", lang),
-			Value: fmt.Sprintf(langText("获取 Top 段信息失败: %v", "Failed to get top segments: %v", lang), topSegmentsErr),
+			Title: langText("Top Segments by Size Error", "Top Segments by Size Error", "Top Segments by Size Error", lang),
+			Value: fmt.Sprintf(langText("Failed to get top segments by size: %v", "Failed to get top segments by size: %v", "Failed to get top segments by size: %v", lang), topSegmentsErr),
 		})
 		overallErr = appendError(overallErr, topSegmentsErr)
 	} else if allDbObjectInfo != nil && len(allDbObjectInfo.TopSegments) > 0 {
 		topSegmentsTable := &ReportTable{
-			Name: langText("Top 段 (按大小)", "Top Segments (by Size)", lang),
-			// TablespaceName is not available in db.TopSegment struct, so it's removed from headers.
-			Headers: []string{langText("所有者", "Owner", lang), langText("段名", "Segment Name", lang), langText("段类型", "Segment Type", lang), langText("大小 (GB)", "Size (GB)", lang)},
+			Name:    langText("Top Segments by Size", "Top Segments by Size", "Top Segments by Size", lang),
+			Headers: []string{langText("Owner", "Owner", "Owner", lang), langText("Segment Name", "Segment Name", "Segment Name", lang), langText("Segment Type", "Segment Type", "Segment Type", lang), langText("Size (GB)", "Size (GB)", "Size (GB)", lang)},
 			Rows:    [][]string{},
 		}
 		for _, ts := range allDbObjectInfo.TopSegments {
-			sizeGB := ts.SizeMB / 1024 // Convert MB to GB
-			// ts.TablespaceName is not available
+			sizeGB := ts.SizeMB / 1024 
 			row := []string{ts.Owner, ts.SegmentName, ts.SegmentType, fmt.Sprintf("%.2f", sizeGB)}
 			topSegmentsTable.Rows = append(topSegmentsTable.Rows, row)
 		}
 		tables = append(tables, topSegmentsTable)
 	} else {
 		cards = append(cards, ReportCard{
-			Title: langText("Top段", "Top Segments", lang),
-			Value: langText("未查询到Top段数据。", "No top segments data found.", lang),
+			Title: langText("Top Segments by Size", "Top Segments by Size", "Top Segments by Size", lang),
+			Value: langText("No segment data available.", "No segment data available.", "No segment data available.", lang),
 		})
 	}
 
-	// 3. 处理无效对象列表
+	// 3. Process Invalid Objects list
 	if invalidObjectsErr != nil {
-		logger.Errorf("处理对象模块 - 获取无效对象列表失败: %v", invalidObjectsErr)
+		logger.Errorf("Error processing objects module - failed to get Invalid Objects list: %v", invalidObjectsErr)
 		cards = append(cards, ReportCard{
-			Title: langText("无效对象列表错误", "Invalid Objects List Error", lang),
-			Value: fmt.Sprintf(langText("获取无效对象列表失败: %v", "Failed to get invalid objects list: %v", lang), invalidObjectsErr),
+			Title: langText("Invalid Objects Error", "Invalid Objects Error", "Invalid Objects Error", lang),
+			Value: fmt.Sprintf(langText("Failed to get invalid objects list: %v", "Failed to get invalid objects list: %v", "Failed to get invalid objects list: %v", lang), invalidObjectsErr),
 		})
 		overallErr = appendError(overallErr, invalidObjectsErr)
 	} else if allDbObjectInfo != nil && len(allDbObjectInfo.InvalidObjects) > 0 {
 		invalidObjectsTable := &ReportTable{
-			Name:    langText("无效对象列表", "Invalid Objects List", lang),
-			Headers: []string{langText("所有者", "Owner", lang), langText("对象名", "Object Name", lang), langText("对象类型", "Object Type", lang), langText("创建时间", "Created", lang), langText("最后DDL时间", "Last DDL Time", lang)},
+			Name:    langText("Invalid Objects", "Invalid Objects", "Invalid Objects", lang),
+			Headers: []string{langText("Owner", "Owner", "Owner", lang), langText("Object Name", "Object Name", "Object Name", lang), langText("Object Type", "Object Type", "Object Type", lang), langText("Created", "Created", "Created", lang), langText("Last DDL Time", "Last DDL Time", "Last DDL Time", lang)},
 			Rows:    [][]string{},
 		}
 		for _, obj := range allDbObjectInfo.InvalidObjects {
@@ -100,11 +98,11 @@ func processObjectsModule(dbConn *sql.DB, lang string) (cards []ReportCard, tabl
 		tables = append(tables, invalidObjectsTable)
 	} else {
 		cards = append(cards, ReportCard{
-			Title: langText("无效对象检查", "Invalid Objects Check", lang),
-			Value: langText("未发现无效对象。", "No invalid objects found.", lang),
+			Title: langText("Invalid Objects", "Invalid Objects", "Invalid Objects", lang),
+			Value: langText("No invalid object data available.", "No invalid object data available.", "No invalid object data available.", lang),
 		})
 	}
 
-	charts = nil // Objects module does not have charts
+	charts = nil 
 	return cards, tables, charts, overallErr
 }

@@ -1,4 +1,4 @@
-  // 定义不同风格的CSS变量
+  // Define CSS variables for different styles
   const styleVariables = {
     default: {
       '--primary-blue': '#1a73e8',
@@ -40,10 +40,10 @@
       'chart-bg': '#ffffff'
     },
     dark: {
-      '--primary-blue': '#8ab4f8', // 浅蓝色，用于暗色背景
-      '--secondary-blue': '#303841', // 深色背景的次色调
-      '--text-primary': '#e8eaed',  // 浅色文本
-      '--text-secondary': '#9aa0a6', // 次要浅色文本
+      '--primary-blue': '#8ab4f8', // Light blue for dark backgrounds
+      '--secondary-blue': '#303841', // Secondary color for dark backgrounds
+      '--text-primary': '#e8eaed',  // Light text
+      '--text-secondary': '#9aa0a6', // Secondary light text
       '--border-color': '#5f6368',  // 深色模式边框
       '--card-shadow': '0 2px 6px rgba(0, 0, 0, 0.3)', // 深色卡片阴影
       'body-bg': '#202124', // 深色背景
@@ -55,8 +55,8 @@
     highContrast: {
       '--primary-blue': '#0000ff', // 纯蓝
       '--secondary-blue': '#e0e0e0', // 灰色背景
-      '--text-primary': '#000000',  // 纯黑文本
-      '--text-secondary': '#333333', // 深灰文本
+      '--text-primary': '#000000',  // Pure black text
+      '--text-secondary': '#333333', // Dark gray text
       '--border-color': '#000000',  // 纯黑边框
       '--card-shadow': 'none', // 无阴影，依赖边框
       'body-bg': '#ffffff', // 纯白背景
@@ -69,7 +69,7 @@
 
   // 切换报告风格
   function changeReportStyle(styleName) {
-    // 更新按钮的激活状态
+    // Update the active state of the buttons
     document.querySelectorAll('.sidebar .btn-group[aria-label="风格选择"] .btn').forEach(btn => {
         btn.classList.remove('active');
     });
@@ -85,14 +85,14 @@
       if (variable.startsWith('--')) {
         root.style.setProperty(variable, value);
       } else {
-        // 对于非CSS变量的特殊处理 (例如 body背景)
+        // Special handling for non-CSS variables (e.g., body background)
         switch(variable) {
           case 'body-bg': document.body.style.backgroundColor = value; break;
           // 可以添加更多特殊处理
         }
       }
     }
-    localStorage.setItem('reportStyle', styleName); // 保存用户选择
+    localStorage.setItem('reportStyle', styleName); // Save user's choice
 
     // 更新图表颜色 (如果Chart.js实例存在)
     if (typeof Chart !== 'undefined' && Chart.instances) {
@@ -129,10 +129,10 @@
         chart.options.plugins.title.color = titleColor;
     }
     
-    // 更新数据集颜色 (示例，可能需要更复杂的逻辑)
+    // Update dataset colors (example, may require more complex logic)
     chart.data.datasets.forEach(dataset => {
         if (isDark) {
-            // 为暗色模式选择不同的颜色
+            // Choose different colors for dark mode
             // dataset.borderColor = style['--primary-blue'];
             // dataset.backgroundColor = hexToRgb(style['--primary-blue'], 0.1);
         } else {
@@ -194,7 +194,7 @@ function deepMerge(target, source) {
   return output;
 }
 
-// 页面加载时检查并应用保存的风格
+// Check and apply saved style on page load
 document.addEventListener('DOMContentLoaded', function() {
     // console.log('[report_scripts.js] DOMContentLoaded event fired for styles and charts.');
 
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // console.log('[report_scripts.js] --- END ADAPTER STATE CHECK ---');
     // DETAILED ADAPTER CHECK - END
 
-  // 从本地存储中获取上次选择的风格
+  // Get the last selected style from local storage
   const savedStyle = localStorage.getItem('reportStyle');
   let activeStyle = 'default';
   if (savedStyle && styleVariables[savedStyle]) {
@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   changeReportStyle(activeStyle);
 
-  // 更新风格按钮的激活状态
+  // Update the active state of the style buttons
   document.querySelectorAll('.sidebar .btn-group[aria-label="风格选择"] .btn').forEach(btn => {
     btn.classList.remove('active');
   });
@@ -291,7 +291,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Parse specific options provided by the server
       const specificParsedOptions = chartOptionsStr ? JSON.parse(chartOptionsStr) : {};
 
-      // 通用图表配置增强
+      // Enhanced universal chart configuration
       const currentStyle = styleVariables[localStorage.getItem('reportStyle') || 'default'];
       const gridColor = currentStyle['--border-color'];
       const textColor = currentStyle['--text-primary'];
@@ -367,39 +367,39 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     } catch (e) { // Outer catch for errors during data/options parsing or setup
         // console.error('Error parsing chart data or options, or during option setup for canvas:', canvasElement.id, e);
-        // 可选: 在canvas上显示错误信息
+        // Optional: Display error message on the canvas
         const ctx = canvasElement.getContext('2d');
         if (ctx) {
             ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
             ctx.fillStyle = 'red'; // Or use a color from styleVariables
             ctx.font = '14px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('图表加载失败 (Data/Config Error)', canvasElement.width / 2, canvasElement.height / 2);
+            ctx.fillText('Chart loading failed (Data/Config Error)', canvasElement.width / 2, canvasElement.height / 2);
         }
       } // Closes document.querySelectorAll('.chart-canvas').forEach
     }); // Corrected comment: Closes document.querySelectorAll('.chart-canvas').forEach
 }); // Closes the first document.addEventListener('DOMContentLoaded' for styles and charts);
 // (其他代码 ... )
 
-// 函数：显示指定ID的section，并更新导航链接的激活状态
+// Function: Display the section with the specified ID and update the active state of the navigation links
 function showSection(sectionId, clickedLink) {
   // 隐藏所有部分
   document.querySelectorAll('.report-section').forEach(function(section) {
     section.style.display = 'none';
   });
   
-  // 移除所有链接的active类
+  // Remove the active class from all links
   document.querySelectorAll('.sidebar .nav-link').forEach(function(link) {
     link.classList.remove('active');
   });
   
-  // 激活点击的链接
+  // Activate the clicked link
   if (clickedLink) {
     clickedLink.classList.add('active');
   }
   
   // 如果是"全部"视图，则显示总览部分
-  // 注意: 确保你有一个ID为 "section-all" 的元素用于总览
+  // Note: Ensure you have an element with ID "section-all" for the overview
   const allSection = document.getElementById('section-all'); 
   if (sectionId === 'all' && allSection) {
     allSection.style.display = 'block';
@@ -414,7 +414,7 @@ function showSection(sectionId, clickedLink) {
         // 并且确保 "all" 链接被激活
         const allNavLink = document.querySelector('.sidebar .nav-link[data-section-id="all"]');
         if (allNavLink && clickedLink !== allNavLink) {
-            if(clickedLink) clickedLink.classList.remove('active'); // 移除之前错误激活的链接
+            if(clickedLink) clickedLink.classList.remove('active'); // Remove the previously incorrectly activated link
             allNavLink.classList.add('active');
         }
     }
@@ -430,11 +430,11 @@ function showSection(sectionId, clickedLink) {
   //   }
   // }
 
-  // 将当前激活的sectionId保存到localStorage
+  // Save the current active sectionId to localStorage
   localStorage.setItem('activeSectionId', sectionId);
 }
 
-// 页面加载时设置导航链接的事件监听器并显示初始部分
+// Set event listeners for navigation links and show the initial section on page load
 document.addEventListener('DOMContentLoaded', function() {
   const navLinks = document.querySelectorAll('.sidebar .nav-link[data-section-id]');
   
@@ -447,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
 
-    // 检查localStorage中是否有保存的活动section
+    // Check if there is a saved active section in localStorage
     const savedSectionId = localStorage.getItem('activeSectionId');
     let initialSectionId = 'all'; // 默认显示总览
     let initialLink = document.querySelector('.sidebar .nav-link[data-section-id="all"]');
@@ -458,7 +458,7 @@ document.addEventListener('DOMContentLoaded', function() {
             initialSectionId = savedSectionId;
             initialLink = savedLink;
         } else {
-            // 如果保存的sectionId无效 (例如，模块被移除)，则重置
+            // If the saved sectionId is invalid (e.g., module removed), reset it
             localStorage.removeItem('activeSectionId');
         }
     }

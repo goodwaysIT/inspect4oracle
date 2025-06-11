@@ -25,24 +25,24 @@ func Init(enableDebug bool) {
 	if debugMode {
 		debugLogger = log.New(os.Stdout, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
 	} else {
-		// 如果未启用调试模式，则将调试日志输出到 ioutil.Discard
+		// If debug mode is not enabled, discard debug logs
 		debugLogger = log.New(discardWriter{}, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
 	}
 }
 
-// discardWriter 实现了 io.Writer 接口，但会丢弃所有写入的数据
+// discardWriter implements the io.Writer interface but discards all written data.
 type discardWriter struct{}
 
 func (discardWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-// Info 记录信息级别日志
+// Info logs a message at InfoLevel
 func Info(v ...interface{}) {
 	infoLogger.Output(3, fmt.Sprintln(v...))
 }
 
-// Infof 格式化记录信息级别日志
+// Infof logs a formatted message at InfoLevel
 func Infof(format string, v ...interface{}) {
 	infoLogger.Output(3, fmt.Sprintf(format, v...))
 }
@@ -57,23 +57,23 @@ func Warnf(format string, v ...interface{}) {
 	warnLogger.Output(3, fmt.Sprintf(format, v...))
 }
 
-// Error 记录错误级别日志
+// Error logs a message at the error level.
 func Error(v ...interface{}) {
 	errorLogger.Output(3, fmt.Sprintln(v...))
 }
 
-// Errorf 格式化记录错误级别日志
+// Errorf logs a formatted message at the error level.
 func Errorf(format string, v ...interface{}) {
 	errorLogger.Output(3, fmt.Sprintf(format, v...))
 }
 
-// Fatal 记录致命错误级别日志并退出程序
+// Fatal logs a message at the fatal level and exits the program.
 func Fatal(v ...interface{}) {
 	errorLogger.Output(3, fmt.Sprintln(v...))
 	os.Exit(1)
 }
 
-// Fatalf 格式化记录致命错误级别日志并退出程序
+// Fatalf logs a formatted message at the fatal level and exits the program.
 func Fatalf(format string, v ...interface{}) {
 	errorLogger.Output(3, fmt.Sprintf(format, v...))
 	os.Exit(1)

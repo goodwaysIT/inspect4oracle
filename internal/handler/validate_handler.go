@@ -10,7 +10,7 @@ import (
 	"github.com/goodwaysIT/inspect4oracle/internal/logger"
 )
 
-// ValidateRequest 定义验证请求结构体
+// ValidateRequest defines the validation request structure
 type ValidateRequest struct {
 	Host     string `json:"host"`
 	Port     string `json:"port"`
@@ -33,7 +33,7 @@ func ValidateConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 解析 JSON 请求体
+	// Parse JSON request body
 	var reqData ValidateRequest
 	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
 		logger.Error(fmt.Sprintf("Failed to decode request body: %s", err.Error()))
@@ -48,7 +48,7 @@ func ValidateConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 设置默认端口（如果未提供）
+	// Set default port if not provided
 	port := reqData.Port
 	if port == "" {
 		port = "1521"
@@ -80,7 +80,7 @@ func ValidateConnection(w http.ResponseWriter, r *http.Request) {
 	// 验证数据库连接和权限
 	allAccessGranted, privilegeResults, err := db.CheckDatabaseConnection(dbConn)
 	if err != nil {
-		// 如果连接成功但权限检查失败，仍然返回部分成功的结果
+		// If the connection is successful but permission check fails, still return a partially successful result.
 		sendJSONResponse(w, ValidateResponse{
 			Success:        !allAccessGranted,
 			Message:        "Failed to check database permissions",
@@ -89,7 +89,7 @@ func ValidateConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 检查是否有足够的权限
+	// Check for sufficient privileges.
 	if !allAccessGranted {
 		sendJSONResponse(w, ValidateResponse{
 			Success:        false,
@@ -107,14 +107,14 @@ func ValidateConnection(w http.ResponseWriter, r *http.Request) {
 	}, http.StatusOK)
 }
 
-// sendJSONResponse 发送 JSON 格式的成功响应
+// sendJSONResponse sends a successful response in JSON format.
 func sendJSONResponse(w http.ResponseWriter, data interface{}, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(data)
 }
 
-// sendJSONError 发送 JSON 格式的错误响应
+// sendJSONError sends an error response in JSON format.
 func sendJSONError(w http.ResponseWriter, message string, statusCode int) {
 	sendJSONResponse(w, ValidateResponse{
 		Success: false,

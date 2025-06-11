@@ -12,10 +12,10 @@ type ReportCard struct {
 
 // ReportTable defines the structure for a table in a report.
 type ReportTable struct {
-	Name    string     `json:"name"`            // 表格名称
+	Name    string     `json:"name"`            // Table name
 	Headers []string   `json:"headers"`         // 表头
 	Rows    [][]string `json:"rows"`            // 表格数据行
-	Notes   string     `json:"notes,omitempty"` // 表格的额外注释
+	Notes   string     `json:"notes,omitempty"` // Additional notes for the table
 }
 
 // ChartDataPoint represents a single point in a chart.
@@ -123,13 +123,13 @@ type ReportChart struct {
 // ReportModule defines the structure for a report module.
 // The ID field was added based on its usage in module_processor.go
 type ReportModule struct {
-	ID          string         `json:"id"`                    // 模块内部唯一ID (e.g., "dbinfo", "performance")
-	Name        string         `json:"name"`                  // 模块内部名称 (e.g., "dbinfo") - Potentially redundant with ID, review usage
-	Title       string         `json:"title"`                 // 模块显示标题 (e.g., "数据库基本信息")
+	ID          string         `json:"id"`                    // Unique internal ID for the module (e.g., "dbinfo", "performance")
+	Name        string         `json:"name"`                  // Internal name of the module (e.g., "dbinfo") - Potentially redundant with ID, review usage
+	Title       string         `json:"title"`                 // Display title for the module (e.g., "Database Basic Information")
 	Icon        string         `json:"icon,omitempty"`        // Font Awesome icon class (e.g., "fas fa-database")
-	Cards       []ReportCard   `json:"cards,omitempty"`       // 信息卡片列表
+	Cards       []ReportCard   `json:"cards,omitempty"`       // List of info cards
 	Tables      []*ReportTable `json:"tables,omitempty"`      // 表格列表 (Changed to slice of pointers based on module_processor.go usage)
 	Charts      []ReportChart  `json:"charts,omitempty"`      // 图表列表 (New field)
-	Error       string         `json:"error,omitempty"`       // 模块级别错误信息
-	Description string         `json:"description,omitempty"` // 模块描述或摘要信息
+	Error       string         `json:"error,omitempty"`       // Module-level error message
+	Description string         `json:"description,omitempty"` // Module description or summary information
 }

@@ -165,6 +165,16 @@ Inspect4Oracle 提供以下核心巡检模块 (部分模块可能仍在开发中
     *   非系统角色列表。
     *   (审计配置等更多安全特性正在规划中)
 
+## 🛠️ 技术栈与主要依赖
+
+本项目主要基于 Go 语言 (版本请参见 `go.mod` 文件) 构建，并依赖以下核心第三方库来提供关键功能：
+
+*   **[github.com/gorilla/mux](https://github.com/gorilla/mux)**: 一个强大且灵活的 HTTP 路由器和 URL 匹配器，用于处理 API 和 Web界面的请求路由。
+*   **[github.com/sijms/go-ora/v2](https://github.com/sijms/go-ora/v2)**: 一个纯 Go 实现的 Oracle 数据库驱动程序，使得应用无需依赖 Oracle Instant Client 即可连接和操作 Oracle 数据库。
+
+完整的依赖列表及其版本信息请参见项目根目录下的 `go.mod` 文件。
+
+
 ## 🤝 参与贡献
 
 我们热烈欢迎社区的开发者参与到 Inspect4Oracle 项目的贡献中来！无论是报告 Bug、提出功能建议，还是直接贡献代码，您的帮助对项目都至关重要。
