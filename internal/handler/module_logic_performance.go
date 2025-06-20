@@ -164,8 +164,8 @@ func processPerformanceModule(dbConn *sql.DB, lang string) ([]ReportCard, []*Rep
 	metricsData := metricsBundle.SysMetricsSummary
 	err := metricsBundle.SysMetricsError
 	if err != nil {
-		logger.Errorf("%s: %v", langText("Failed to retrieve performance metrics data", "Failed to retrieve performance metrics data", "Failed to retrieve performance metrics data", lang), err)
-		cards = append(cards, cardFromError("Performance Metrics Error", "Performance Metrics Error", "Performance Metrics Error", err, lang))
+		logger.Errorf("%s: %v", langText("获取性能指标数据失败", "Failed to retrieve performance metrics data", "パフォーマンスメトリクスデータの取得に失敗しました", lang), err)
+		cards = append(cards, cardFromError("性能指标错误", "Performance Metrics Error", "パフォーマンスメトリクスエラー", err, lang))
 		overallErr = err
 		// Do not return directly, allow subsequent processing of other possible metrics data if GetAllPerformanceMetrics returns multiple metrics in the future.
 	}
@@ -174,7 +174,7 @@ func processPerformanceModule(dbConn *sql.DB, lang string) ([]ReportCard, []*Rep
 		logger.Warn("Performance module: No performance metric data was retrieved.")
 		cards = append(cards, ReportCard{
 			Title: langText("性能指标", "Performance Metrics", "パフォーマンスメトリクス", lang),
-			Value: langText("No performance metrics data was retrieved.", "No performance metrics data was retrieved.", "パフォーマンスメトリクスデータが取得されませんでした。", lang),
+			Value: langText("未能检索到性能指标数据。", "No performance metrics data was retrieved.", "パフォーマンスメトリクスデータが取得されませんでした。", lang),
 		})
 		// Do not return, as there may be other metrics data or errors
 	}
@@ -211,7 +211,7 @@ func processPerformanceModule(dbConn *sql.DB, lang string) ([]ReportCard, []*Rep
 	if len(charts) == 0 && overallErr == nil && len(metricsData) > 0 { // Add note only if data was present but no charts made
 		cards = append(cards, ReportCard{
 			Title: langText("图表提示", "Chart Note", "チャートノート", lang),
-			Value: langText("Although raw performance metrics data was retrieved, no charts could be generated. This might be due to missing or invalid data for the expected metrics.", "Although raw performance metrics data was retrieved, no charts could be generated. This might be due to missing or invalid data for the expected metrics.", "Although raw performance metrics data was retrieved, no charts could be generated. This might be due to missing or invalid data for the expected metrics.", lang),
+			Value: langText("虽然检索到了原始性能指标数据，但无法生成图表。这可能是由于预期指标的数据丢失或无效。", "Although raw performance metrics data was retrieved, no charts could be generated. This might be due to missing or invalid data for the expected metrics.", "生のパフォーマンスメティクスデータは取得されましたが、チャートを生成できませんでした。これは、期待されるメティクスのデータが欠落しているか無効であるため可能性があります。", lang),
 		})
 	}
 

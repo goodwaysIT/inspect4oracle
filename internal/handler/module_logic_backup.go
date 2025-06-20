@@ -12,7 +12,7 @@ import (
 func generateArchivelogModeCard(backupData *db.AllBackupInfo, lang string) (card ReportCard, err error) {
 	if backupData.ArchivelogModeError != nil {
 		logger.Errorf("Failed to get archivelog mode: %v", backupData.ArchivelogModeError)
-		return cardFromError("Archivelog Mode Error", "Archivelog Mode Error", "Archivelog Mode Error", backupData.ArchivelogModeError, lang), backupData.ArchivelogModeError
+		return cardFromError("归档日志模式错误", "Archivelog Mode Error", "アーカイブログモードエラー", backupData.ArchivelogModeError, lang), backupData.ArchivelogModeError
 	}
 	return ReportCard{
 		Title: langText("数据库日志模式", "Database Log Mode", "データベースログモード", lang),
@@ -24,7 +24,7 @@ func generateArchivelogModeCard(backupData *db.AllBackupInfo, lang string) (card
 func generateFlashbackStatusCard(backupData *db.AllBackupInfo, lang string) (card ReportCard, err error) {
 	if backupData.FlashbackStatusError != nil {
 		logger.Errorf("Failed to get flashback status: %v", backupData.FlashbackStatusError)
-		return cardFromError("Flashback Status Error", "Flashback Status Error", "Flashback Status Error", backupData.FlashbackStatusError, lang), backupData.FlashbackStatusError
+		return cardFromError("闪回状态错误", "Flashback Status Error", "フラッシュバックステータスエラー", backupData.FlashbackStatusError, lang), backupData.FlashbackStatusError
 	}
 
 	flashbackCardValue := fmt.Sprintf("%s", backupData.FlashbackStatus.FlashbackOn)
@@ -46,7 +46,7 @@ func generateFlashbackStatusCard(backupData *db.AllBackupInfo, lang string) (car
 func generateRMANJobsTable(backupData *db.AllBackupInfo, lang string) (card *ReportCard, table *ReportTable, err error) {
 	if backupData.RMANJobsError != nil {
 		logger.Errorf("Failed to get RMAN jobs: %v", backupData.RMANJobsError)
-		noDataCard := cardFromError("RMAN Backup Jobs Error", "RMAN Backup Jobs Error", "RMAN Backup Jobs Error", backupData.RMANJobsError, lang)
+		noDataCard := cardFromError("RMAN备份作业错误", "RMAN Backup Jobs Error", "RMANバックアップジョブエラー", backupData.RMANJobsError, lang)
 		return &noDataCard, nil, backupData.RMANJobsError
 	}
 
@@ -85,8 +85,8 @@ func generateRMANJobsTable(backupData *db.AllBackupInfo, lang string) (card *Rep
 		table = rmanTable
 	} else {
 		noDataCard := ReportCard{
-			Title: langText("RMAN备份作业", "RMAN Backup Jobs", "RMAN Backup Jobs", lang),
-			Value: langText("No RMAN backup jobs found in the last 7 days. Note: RMAN backup job data is from the last 7 days. If V$RMAN_BACKUP_JOB_DETAILS is empty, data is attempted from V$BACKUP_SET, which may not include all job details.", "No RMAN backup jobs found in the last 7 days. Note: RMAN backup jobs data is from the last 7 days. If V$RMAN_BACKUP_JOB_DETAILS is empty, data is attempted from V$BACKUP_SET, which may not include all job details.", "過去7日間でRMANバックアップジョブが見つかりませんでした。注意：RMANバックアップジョブデータは過去7日間のものです。V$RMAN_BACKUP_JOB_DETAILSが空の場合、データはV$BACKUP_SETから試行されますが、これにはすべてのジョブ詳細が含まれていない場合があります。", lang),
+			Title: langText("RMAN备份作业", "RMAN Backup Jobs", "RMANバックアップジョブ", lang),
+			Value: langText("在过去7天内未找到RMAN备份作业。注意：RMAN备份作业数据来自过去7天。如果V$RMAN_BACKUP_JOB_DETAILS为空，则会尝试从V$BACKUP_SET获取数据，其中可能不包含所有作业详细信息。", "No RMAN backup jobs found in the last 7 days. Note: RMAN backup job data is from the last 7 days. If V$RMAN_BACKUP_JOB_DETAILS is empty, data is attempted from V$BACKUP_SET, which may not include all job details.", "過去7日間でRMANバックアップジョブが見つかりませんでした。注意：RMANバックアップジョブデータは過去7日間のものです。V$RMAN_BACKUP_JOB_DETAILSが空の場合、データはV$BACKUP_SETから試行されますが、これにはすべてのジョブ詳細が含まれていない場合があります。", lang),
 		}
 		card = &noDataCard
 	}
@@ -97,7 +97,7 @@ func generateRMANJobsTable(backupData *db.AllBackupInfo, lang string) (card *Rep
 func generateRecycleBinTable(backupData *db.AllBackupInfo, lang string) (card *ReportCard, table *ReportTable, err error) {
 	if backupData.RecycleBinError != nil {
 		logger.Errorf("Failed to get recycle bin objects: %v", backupData.RecycleBinError)
-		noDataCard := cardFromError("Recycle Bin Error", "Recycle Bin Error", "Recycle Bin Error", backupData.RecycleBinError, lang)
+		noDataCard := cardFromError("回收站错误", "Recycle Bin Error", "リサイクルビンエラー", backupData.RecycleBinError, lang)
 		return &noDataCard, nil, backupData.RecycleBinError
 	}
 
@@ -105,7 +105,7 @@ func generateRecycleBinTable(backupData *db.AllBackupInfo, lang string) (card *R
 		rbTable := &ReportTable{
 			Name: langText("回收站对象 (可恢复)", "Recycle Bin Objects (Restorable)", "リサイクルビンオブジェクト (復元可能)", lang),
 			Headers: []string{
-				langText("所有者", "Owner", "所有者", lang), langText("Object Name", "Object Name", "Object Name", lang), langText("Original Name", "Original Name", "Original Name", lang),
+				langText("所有者", "Owner", "所有者", lang), langText("对象名称", "Object Name", "オブジェクト名", lang), langText("原始名称", "Original Name", "元の名前", lang),
 				langText("类型", "Type", "タイプ", lang), langText("删除时间", "Drop Time", "削除時間", lang), langText("空间(块)", "Space (Blocks)", "スペース(ブロック)", lang), langText("可恢复?", "Can Undrop?", "復元可能?", lang),
 			},
 			Rows: [][]string{},
@@ -137,7 +137,7 @@ func generateRecycleBinTable(backupData *db.AllBackupInfo, lang string) (card *R
 func generateDataPumpJobsTable(backupData *db.AllBackupInfo, lang string) (card *ReportCard, table *ReportTable, err error) {
 	if backupData.DataPumpJobsError != nil {
 		logger.Errorf("Failed to get Data Pump jobs: %v", backupData.DataPumpJobsError)
-		noDataCard := cardFromError("Data Pump Jobs Error", "Data Pump Jobs Error", "Data Pump Jobs Error", backupData.DataPumpJobsError, lang)
+		noDataCard := cardFromError("数据泵作业错误", "Data Pump Jobs Error", "データポンプジョブエラー", backupData.DataPumpJobsError, lang)
 		return &noDataCard, nil, backupData.DataPumpJobsError
 	}
 
@@ -145,7 +145,7 @@ func generateDataPumpJobsTable(backupData *db.AllBackupInfo, lang string) (card 
 		dpTable := &ReportTable{
 			Name: langText("Data Pump 作业", "Data Pump Jobs", "データポンプジョブ", lang),
 			Headers: []string{
-				langText("Job Name", "Job Name", "Job Name", lang), langText("所有者", "Owner", "所有者", lang), langText("操作", "Operation", "操作", lang),
+				langText("作业名称", "Job Name", "ジョブ名", lang), langText("所有者", "Owner", "所有者", lang), langText("操作", "Operation", "操作", lang),
 				langText("模式", "Mode", "モード", lang), langText("状态", "State", "ステータス", lang), langText("附加会话", "Attached Sessions", "アタッチセッション", lang),
 			},
 			Rows: [][]string{},
@@ -185,7 +185,7 @@ func processBackupModule(dbConn *sql.DB, lang string) (allCards []ReportCard, al
 	// If there's an error getting ArchivelogMode, it might indicate a broader issue with DB access for backup info.
 	if backupData.ArchivelogModeError != nil {
 		logger.Errorf("Error processing backup module - failed to get basic backup information (e.g., archivelog mode): %v", backupData.ArchivelogModeError)
-		allCards = append(allCards, cardFromError("Backup Information Error", "Backup Information Error", "Backup Information Error", backupData.ArchivelogModeError, lang))
+		allCards = append(allCards, cardFromError("备份信息错误", "Backup Information Error", "バックアップ情報エラー", backupData.ArchivelogModeError, lang))
 		return allCards, allTables, nil, backupData.ArchivelogModeError // No charts for backup module
 	}
 

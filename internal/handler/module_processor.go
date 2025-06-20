@@ -71,39 +71,39 @@ var moduleProcessors = map[string]moduleInfo{
 		processor: adaptParametersModule,
 	},
 	"parameters": { // Alias for params
-		nameFunc:  func(lang string) string { return langText("Key Database Parameters", "Key Database Parameters", "Key Database Parameters", lang) },
+		nameFunc:  func(lang string) string { return langText("数据库参数", "Key Database Parameters", "主要なデータベースパラメータ", lang) },
 		processor: adaptParametersModule,
 	},
 	"dbinfo": {
-		nameFunc:  func(lang string) string { return langText("Basic Info", "Basic Info", "Basic Info", lang) },
+		nameFunc:  func(lang string) string { return langText("基本信息", "Basic Info", "基本情報", lang) },
 		processor: processDbinfoModule, // Assumes processDbinfoModule is compatible or adapted
 	},
 	"storage": {
-		nameFunc:  func(lang string) string { return langText("Storage Info", "Storage Info", "Storage Info", lang) },
+		nameFunc:  func(lang string) string { return langText("存储信息", "Storage Info", "ストレージ情報", lang) },
 		processor: adaptStorageModule,
 	},
 	"sessions": {
-		nameFunc:  func(lang string) string { return langText("Session Details", "Session Details", "Session Details", lang) },
+		nameFunc:  func(lang string) string { return langText("会话详情", "Session Details", "セッション詳細", lang) },
 		processor: adaptSessionsModule,
 	},
 	"objects": {
-		nameFunc: func(lang string) string { return langText("Database Objects", "Database Objects", "Database Objects", lang) },
+		nameFunc: func(lang string) string { return langText("数据库对象", "Database Objects", "データベースオブジェクト", lang) },
 		titleFunc: func(lang string) string {
-			return langText("Database Objects Statistics & Status", "Database Objects Statistics & Status", "Database Objects Statistics & Status", lang)
+			return langText("数据库对象统计与状态", "Database Objects Statistics & Status", "データベースオブジェクトの統計とステータス", lang)
 		},
 		icon:      "fas fa-cube",
 		processor: adaptObjectsModule,
 	},
 	"performance": {
-		nameFunc:  func(lang string) string { return langText("Database Performance", "Database Performance", "Database Performance", lang) },
+		nameFunc:  func(lang string) string { return langText("数据库性能", "Database Performance", "データベースのパフォーマンス", lang) },
 		processor: adaptPerformanceModule,
 	},
 	"security": {
-		nameFunc:  func(lang string) string { return langText("Security Configuration", "Security Configuration", "Security Configuration", lang) },
+		nameFunc:  func(lang string) string { return langText("安全配置", "Security Configuration", "セキュリティ構成", lang) },
 		processor: processSecurityModule, // Assumes processSecurityModule is compatible or adapted
 	},
 	"backup": {
-		nameFunc:  func(lang string) string { return langText("Backup & Recovery", "Backup & Recovery", "Backup & Recovery", lang) },
+		nameFunc:  func(lang string) string { return langText("备份与恢复", "Backup & Recovery", "バックアップとリカバリ", lang) },
 		processor: adaptBackupModule,
 	},
 }
@@ -116,9 +116,9 @@ func ProcessInspectionItem(item string, dbConn *sql.DB, lang string, fullDBInfo 
 
 	pInfo, ok := moduleProcessors[item]
 	if !ok {
-		module.Name = fmt.Sprintf(langText("Unknown Module: %s", "Unknown Module: %s", "Unknown Module: %s", lang), item)
-		errMsg := fmt.Sprintf(langText("Handler for module '%s' is not implemented", "Handler for module '%s' is not implemented", "Handler for module '%s' is not implemented", lang), item)
-		module.Cards = []ReportCard{{Title: langText("Error", "Error", "Error", lang), Value: errMsg}}
+		module.Name = fmt.Sprintf(langText("未知模块: %s", "Unknown Module: %s", "不明なモジュール: %s", lang), item)
+		errMsg := fmt.Sprintf(langText("模块 '%s' 的处理器未实现", "Handler for module '%s' is not implemented", "モジュール '%s' のハンドラが実装されていません", lang), item)
+		module.Cards = []ReportCard{{Title: langText("错误", "Error", "エラー", lang), Value: errMsg}}
 		return module, fmt.Errorf(errMsg)
 	}
 
@@ -183,6 +183,6 @@ func formatNullInt64AsGB(ni sql.NullInt64) string {
 func cardFromError(titleZh, titleEn, titleJp string, err error, lang string) ReportCard {
 	return ReportCard{
 		Title: langText(titleZh, titleEn, titleJp, lang),
-		Value: fmt.Sprintf(langText("Failed to get data: %v", "Failed to get data: %v", "Failed to get data: %v", lang), err),
+		Value: fmt.Sprintf(langText("获取数据失败: %v", "Failed to get data: %v", "データ取得に失敗しました: %v", lang), err),
 	}
 }

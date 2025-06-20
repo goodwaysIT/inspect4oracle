@@ -101,12 +101,12 @@ const langMap = {
     'jp': {
         // Text for the index.html page
         'title': 'Oracleデータベース検査',
-        'business': 'Business Name',
-        'business_placeholder': 'Enter business name',
+        'business': 'ビジネス名',
+        'business_placeholder': 'ビジネス名を入力',
         'host': 'ホスト',
         'port': 'ポート',
-        'service': 'Service Name/SID',
-        'username': 'Username',
+        'service': 'サービス名/SID',
+        'username': 'ユーザー名',
         'password': 'パスワード',
         'inspection_items': '検査項目',
         'dbinfo': '基本情報',

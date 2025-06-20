@@ -15,14 +15,14 @@ import (
 func generateSessionOverview(sessionData *db.AllSessionInfo, fetchErr error, lang string) (cards []ReportCard, table *ReportTable, processingErr error) {
 	if fetchErr != nil {
 		logger.Warnf("Failed to fetch session overview data: %v", fetchErr)
-		cards = append(cards, ReportCard{Title: langText("Session Overview", "Session Overview", "Session Overview", lang), Value: fmt.Sprintf(langText("Failed to get data: %v", "Failed to get data: %v", "Failed to get data: %v", lang), fetchErr)})
+		cards = append(cards, ReportCard{Title: langText("会话总览", "Session Overview", "セッション概要", lang), Value: fmt.Sprintf(langText("获取数据失败: %v", "Failed to get data: %v", "データ取得に失敗しました: %v", lang), fetchErr)})
 		return cards, nil, fetchErr
 	}
 
 	if sessionData != nil && len(sessionData.Overview) > 0 {
 		sessionOverviewTable := ReportTable{
 			Name:    langText("会话总览", "Session Overview", "セッション概要", lang),
-			Headers: []string{langText("实例", "Inst", "インスタンス", lang), langText("Username", "Username", "Username", lang), langText("机器", "Machine", "マシン", lang), langText("状态", "Status", "ステータス", lang), langText("会话数", "Count", "セッション数", lang)},
+			Headers: []string{langText("实例", "Inst", "インスタンス", lang), langText("用户名", "Username", "ユーザー名", lang), langText("机器", "Machine", "マシン", lang), langText("状态", "Status", "ステータス", lang), langText("会话数", "Count", "セッション数", lang)},
 			Rows:    [][]string{},
 		}
 		for _, so := range sessionData.Overview {
@@ -51,7 +51,7 @@ func generateSessionOverview(sessionData *db.AllSessionInfo, fetchErr error, lan
 func generateSessionByEvent(sessionData *db.AllSessionInfo, fetchErr error, lang string) (cards []ReportCard, table *ReportTable, processingErr error) {
 	if fetchErr != nil {
 		logger.Warnf("Failed to fetch session count by wait event data: %v", fetchErr)
-		cards = append(cards, ReportCard{Title: langText("Session Count by Wait Event", "Session Count by Wait Event", "Session Count by Wait Event", lang), Value: fmt.Sprintf(langText("Failed to get data: %v", "Failed to get data: %v", "Failed to get data: %v", lang), fetchErr)})
+		cards = append(cards, ReportCard{Title: langText("按等待事件统计的会话数", "Session Count by Wait Event", "待機イベント別セッション数", lang), Value: fmt.Sprintf(langText("获取数据失败: %v", "Failed to get data: %v", "データ取得に失敗しました: %v", lang), fetchErr)})
 		return cards, nil, fetchErr
 	}
 
@@ -71,7 +71,7 @@ func generateSessionByEvent(sessionData *db.AllSessionInfo, fetchErr error, lang
 		}
 		table = &sessionByEventTable
 	} else {
-		cards = append(cards, ReportCard{Title: langText("按等待事件统计会话数", "Session Count by Wait Event", "Session Count by Wait Event", lang), Value: langText("无按等待事件统计的会话数据", "No session count by wait event data available.", "No session count by wait event data available.", lang)})
+		cards = append(cards, ReportCard{Title: langText("按等待事件统计的会话数", "Session Count by Wait Event", "待機イベント別セッション数", lang), Value: langText("无按等待事件统计的会话数据", "No session count by wait event data available.", "待機イベント別のセッション数データがありません。", lang)})
 	}
 	return cards, table, nil
 }
@@ -82,7 +82,7 @@ func generateSessionHistoryChart(sessionData *db.AllSessionInfo, fetchErr error,
 		logger.Warnf("Failed to fetch recent active session history: %v (This might be due to ASH not being enabled or license issues; the chart will not be displayed)", fetchErr)
 		cards = append(cards, ReportCard{
 			Title: langText("最近活动会话历史", "Recent Active Session History", "最近のアクティブセッション履歴", lang),
-			Value: fmt.Sprintf(langText("Failed to get chart data: %v. Chart cannot be generated.", "Failed to get chart data: %v. Chart cannot be generated.", "Failed to get chart data: %v. Chart cannot be generated.", lang), fetchErr),
+			Value: fmt.Sprintf(langText("获取图表数据失败: %v。无法生成图表。", "Failed to get chart data: %v. Chart cannot be generated.", "チャートデータの取得に失敗しました: %v。チャートを生成できません。", lang), fetchErr),
 		})
 		return cards, nil, fetchErr
 	}
@@ -154,13 +154,13 @@ func generateSessionHistoryChart(sessionData *db.AllSessionInfo, fetchErr error,
 		datasetsJSON, jsonErr := json.Marshal(chartJSData)
 		if jsonErr != nil {
 			logger.Errorf("Failed to serialize session chart datasets to JSON: %v", jsonErr)
-			cards = append(cards, ReportCard{Title: langText("Session Chart Error", "Session Chart Error", "Session Chart Error", lang), Value: fmt.Sprintf(langText("Failed to generate chart data: %v", "Failed to generate chart data: %v", "Failed to generate chart data: %v", lang), jsonErr)})
+			cards = append(cards, ReportCard{Title: langText("会话图表错误", "Session Chart Error", "セッションチャートエラー", lang), Value: fmt.Sprintf(langText("生成图表数据失败: %v", "Failed to generate chart data: %v", "チャートデータの生成に失敗しました: %v", lang), jsonErr)})
 			return cards, nil, jsonErr // Return JSON marshaling error
 		}
 		optionsJSON, jsonErr := json.Marshal(rptOptions)
 		if jsonErr != nil {
 			logger.Errorf("Failed to serialize session chart options to JSON: %v", jsonErr)
-			cards = append(cards, ReportCard{Title: langText("Session Chart Config Error", "Session Chart Config Error", "Session Chart Config Error", lang), Value: fmt.Sprintf(langText("Failed to generate chart config: %v", "Failed to generate chart config: %v", "Failed to generate chart config: %v", lang), jsonErr)})
+			cards = append(cards, ReportCard{Title: langText("会话图表配置错误", "Session Chart Config Error", "セッションチャート構成エラー", lang), Value: fmt.Sprintf(langText("生成图表配置失败: %v", "Failed to generate chart config: %v", "チャート構成の生成に失敗しました: %v", lang), jsonErr)})
 			return cards, nil, jsonErr // Return JSON marshaling error
 		}
 

@@ -14,9 +14,9 @@ import (
 func generateNonSystemUsersTable(dbConn *sql.DB, lang string) (*ReportTable, *ReportCard, error) {
 	nonSystemUsers, err := db.GetNonSystemUsers(dbConn)
 	if err != nil {
-		msg := fmt.Sprintf(langText("Failed to get non-system user info: %v", "Failed to get non-system user info: %v", "Failed to get non-system user info: %v", lang), err)
+		msg := fmt.Sprintf(langText("获取非系统用户信息失败: %v", "Failed to get non-system user info: %v", "非システムユーザー情報の取得に失敗しました: %v", lang), err)
 		card := &ReportCard{
-			Title: langText("Non-System User Info Error", "Non-System User Info Error", "Non-System User Info Error", lang),
+			Title: langText("非系统用户信息错误", "Non-System User Info Error", "非システムユーザー情報エラー", lang),
 			Value: msg,
 		}
 		return nil, card, fmt.Errorf("failed to get non-system users: %w", err)
@@ -26,15 +26,15 @@ func generateNonSystemUsersTable(dbConn *sql.DB, lang string) (*ReportTable, *Re
 		usersTable := &ReportTable{
 			Name: langText("非系统用户账户", "Non-System User Accounts", "非システムユーザーアカウント", lang),
 			Headers: []string{
-				langText("Username", "Username", "Username", lang),
-				langText("账户状态", "Account Status", "アカウントステータス", lang),
-				langText("锁定日期", "Lock Date", "ロック日", lang),
-				langText("过期日期", "Expiry Date", "有効期限", lang),
+				langText("用户名", "Username", "ユーザー名", lang),
+				langText("状态", "Status", "ステータス", lang),
+				langText("锁定时间", "Lock Time", "ロック時間", lang),
+				langText("过期时间", "Expiry Time", "有効期限", lang),
 				langText("默认表空间", "Default Tablespace", "デフォルトテーブルスペース", lang),
 				langText("临时表空间", "Temp Tablespace", "一時テーブルスペース", lang),
-				langText("Profile", "Profile", "プロファイル", lang),
-				langText("创建日期", "Created", "作成日", lang),
-				langText("上次登录", "Last Login", "最終ログイン", lang),
+				langText("配置文件", "Profile", "プロファイル", lang),
+				langText("创建时间", "Created Time", "作成時間", lang),
+				langText("最后登录时间", "Last Login Time", "最終ログイン時間", lang),
 			},
 			Rows: [][]string{},
 		}
@@ -79,9 +79,9 @@ func generateNonSystemUsersTable(dbConn *sql.DB, lang string) (*ReportTable, *Re
 func generateProfilesTable(dbConn *sql.DB, lang string) (*ReportTable, *ReportCard, error) {
 	profiles, err := db.GetProfiles(dbConn)
 	if err != nil {
-		msg := fmt.Sprintf(langText("Failed to get Profile configuration: %v", "Failed to get Profile configuration: %v", "Failed to get Profile configuration: %v", lang), err)
+		msg := fmt.Sprintf(langText("获取配置文件失败: %v", "Failed to get Profile configuration: %v", "プロファイル構成の取得に失敗しました: %v", lang), err)
 		card := &ReportCard{
-			Title: langText("Profile Configuration Error", "Profile Configuration Error", "Profile Configuration Error", lang),
+			Title: langText("配置文件错误", "Profile Configuration Error", "プロファイル構成エラー", lang),
 			Value: msg,
 		}
 		return nil, card, fmt.Errorf("failed to get profiles: %w", err)
@@ -89,10 +89,10 @@ func generateProfilesTable(dbConn *sql.DB, lang string) (*ReportTable, *ReportCa
 
 	if len(profiles) > 0 {
 		profilesTable := &ReportTable{
-			Name: langText("Profile Configuration (Password Policies & DEFAULT)", "Profile Configuration (Password Policies & DEFAULT)", "Profile Configuration (Password Policies & DEFAULT)", lang),
+			Name: langText("配置文件 (密码策略 & 默认)", "Profile Configuration (Password Policies & DEFAULT)", "プロファイル構成 (パスワードポリシー & デフォルト)", lang),
 			Headers: []string{
-				langText("Profile Name", "Profile Name", "Profile Name", lang),
-				langText("Resource Name", "Resource Name", "Resource Name", lang),
+				langText("配置文件名称", "Profile Name", "プロファイル名", lang),
+				langText("资源名称", "Resource Name", "リソース名", lang),
 				langText("限制值", "Limit", "制限値", lang),
 			},
 			Rows: [][]string{},
@@ -108,8 +108,8 @@ func generateProfilesTable(dbConn *sql.DB, lang string) (*ReportTable, *ReportCa
 		return profilesTable, nil, nil
 	} else {
 		card := &ReportCard{
-			Title: langText("Profile Configuration", "Profile Configuration", "Profile Configuration", lang),
-			Value: langText("No relevant Profile configurations found.", "No relevant Profile configurations found.", "No relevant Profile configurations found.", lang),
+			Title: langText("配置文件", "Profile Configuration", "プロファイル構成", lang),
+			Value: langText("未找到相关的配置文件。", "No relevant Profile configurations found.", "関連するプロファイル構成が見つかりませんでした。", lang),
 		}
 		return nil, card, nil
 	}
@@ -119,9 +119,9 @@ func generateProfilesTable(dbConn *sql.DB, lang string) (*ReportTable, *ReportCa
 func generateNonSystemRolesTable(dbConn *sql.DB, lang string) (*ReportTable, *ReportCard, error) {
 	nonSystemRoles, err := db.GetNonSystemRoles(dbConn)
 	if err != nil {
-		msg := fmt.Sprintf(langText("Failed to get non-system roles: %v", "Failed to get non-system roles: %v", "Failed to get non-system roles: %v", lang), err)
+		msg := fmt.Sprintf(langText("获取非系统角色失败: %v", "Failed to get non-system roles: %v", "非システムロールの取得に失敗しました: %v", lang), err)
 		card := &ReportCard{
-			Title: langText("Non-System Roles Error", "Non-System Roles Error", "Non-System Roles Error", lang),
+			Title: langText("非系统角色错误", "Non-System Roles Error", "非システムロールエラー", lang),
 			Value: msg,
 		}
 		return nil, card, fmt.Errorf("failed to get non-system roles: %w", err)
@@ -131,7 +131,7 @@ func generateNonSystemRolesTable(dbConn *sql.DB, lang string) (*ReportTable, *Re
 		rolesTable := &ReportTable{
 			Name: langText("非系统角色", "Non-System Roles", "非システムロール", lang),
 			Headers: []string{
-				langText("Role Name", "Role Name", "Role Name", lang),
+				langText("角色名称", "Role Name", "ロール名", lang),
 				langText("认证类型", "Authentication Type", "認証タイプ", lang),
 			},
 			Rows: [][]string{},
@@ -154,9 +154,9 @@ func generateNonSystemRolesTable(dbConn *sql.DB, lang string) (*ReportTable, *Re
 func generateUsersWithPrivilegedRolesTable(dbConn *sql.DB, lang string) (*ReportTable, *ReportCard, error) {
 	usersWithPrivRoles, err := db.GetUsersWithPrivilegedRoles(dbConn)
 	if err != nil {
-		msg := fmt.Sprintf(langText("Failed to get user privileged roles: %v", "Failed to get user privileged roles: %v", "Failed to get user privileged roles: %v", lang), err)
+		msg := fmt.Sprintf(langText("获取用户特权角色失败: %v", "Failed to get user privileged roles: %v", "ユーザーの特権ロールの取得に失敗しました: %v", lang), err)
 		card := &ReportCard{
-			Title: langText("User Privileged Roles Error", "User Privileged Roles Error", "User Privileged Roles Error", lang),
+			Title: langText("用户特权角色错误", "User Privileged Roles Error", "ユーザー特権ロールエラー", lang),
 			Value: msg,
 		}
 		return nil, card, fmt.Errorf("failed to get users with privileged roles: %w", err)
@@ -166,7 +166,7 @@ func generateUsersWithPrivilegedRolesTable(dbConn *sql.DB, lang string) (*Report
 		userPrivRolesTable := &ReportTable{
 			Name: langText("拥有特权角色的用户", "Users with Privileged Roles", "特権ロールを持つユーザー", lang),
 			Headers: []string{
-				langText("Username", "Username", "Username", lang),
+				langText("用户名", "Username", "ユーザー名", lang),
 				langText("授予的角色", "Granted Role", "付与されたロール", lang),
 				langText("Admin Option", "Admin Option", "管理者オプション", lang),
 			},
@@ -197,7 +197,7 @@ func processSecurityModule(dbConn *sql.DB, lang string, fullDBInfo *db.FullDBInf
 		if userCard != nil { // Helper provided a specific error card
 			cards = append(cards, *userCard)
 		} else { // Generic error card if helper didn't provide one (should not happen with current helper design)
-			cards = append(cards, cardFromError("Non-System User Info Error", "Non-System User Info Error", "Non-System User Info Error", userErr, lang))
+			cards = append(cards, cardFromError("非系统用户信息错误", "Non-System User Info Error", "非システムユーザー情報エラー", userErr, lang))
 		}
 		if overallErr == nil {
 			overallErr = userErr
@@ -215,7 +215,7 @@ func processSecurityModule(dbConn *sql.DB, lang string, fullDBInfo *db.FullDBInf
 		if profileCard != nil { // Helper provided a specific error card
 			cards = append(cards, *profileCard)
 		} else { // Generic error card
-			cards = append(cards, cardFromError("Profile Configuration Error", "Profile Configuration Error", "Profile Configuration Error", profileErr, lang))
+			cards = append(cards, cardFromError("配置文件错误", "Profile Configuration Error", "プロファイル構成エラー", profileErr, lang))
 		}
 		if overallErr == nil {
 			overallErr = profileErr
@@ -233,7 +233,7 @@ func processSecurityModule(dbConn *sql.DB, lang string, fullDBInfo *db.FullDBInf
 		if rolesCard != nil { // Helper provided a specific error card
 			cards = append(cards, *rolesCard)
 		} else { // Generic error card
-			cards = append(cards, cardFromError("Non-System Roles Error", "Non-System Roles Error", "Non-System Roles Error", rolesErr, lang))
+			cards = append(cards, cardFromError("非系统角色错误", "Non-System Roles Error", "非システムロールエラー", rolesErr, lang))
 		}
 		if overallErr == nil {
 			overallErr = rolesErr
@@ -251,7 +251,7 @@ func processSecurityModule(dbConn *sql.DB, lang string, fullDBInfo *db.FullDBInf
 		if userPrivRolesCard != nil { // Helper provided a specific error card
 			cards = append(cards, *userPrivRolesCard)
 		} else { // Generic error card
-			cards = append(cards, cardFromError("User Privileged Roles Error", "User Privileged Roles Error", "User Privileged Roles Error", userPrivRolesErr, lang))
+			cards = append(cards, cardFromError("用户特权角色错误", "User Privileged Roles Error", "ユーザー特権ロールエラー", userPrivRolesErr, lang))
 		}
 		if overallErr == nil {
 			overallErr = userPrivRolesErr

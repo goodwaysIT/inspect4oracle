@@ -149,19 +149,19 @@ func parseInspectRequest(r *http.Request) (*DBConnectionRequest, error) {
 	contentType := r.Header.Get("Content-Type")
 	if strings.HasPrefix(contentType, "application/json") {
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			logger.Error(langText("Failed to parse JSON request body: %v", "Failed to parse JSON request body: %v", "Failed to parse JSON request body: %v", req.Lang), err)
-			return nil, fmt.Errorf("Failed to parse JSON request body: %w", err)
+			logger.Error(langText("解析JSON请求体失败: %v", "Failed to parse JSON request body: %v", "JSONリクエストボディの解析に失敗しました: %v", req.Lang), err)
+			return nil, fmt.Errorf(langText("解析JSON请求体失败: %w", "Failed to parse JSON request body: %w", "JSONリクエストボディの解析に失敗しました: %w", req.Lang), err)
 		}
 	} else if strings.HasPrefix(contentType, "application/x-www-form-urlencoded") || strings.HasPrefix(contentType, "multipart/form-data") {
 		if strings.HasPrefix(contentType, "multipart/form-data") {
 			if err := r.ParseMultipartForm(32 << 20); err != nil { // 32MB 最大内存
-				logger.Error(langText("Failed to parse multipart form data: %v", "Failed to parse multipart form data: %v", "Failed to parse multipart form data: %v", req.Lang), err)
-				return nil, fmt.Errorf("Failed to parse multipart form data: %w", err)
+				logger.Error(langText("解析multipart/form-data失败: %v", "Failed to parse multipart form data: %v", "multipart/form-dataの解析に失敗しました: %v", req.Lang), err)
+				return nil, fmt.Errorf(langText("解析multipart/form-data失败: %w", "Failed to parse multipart form data: %w", "multipart/form-dataの解析に失敗しました: %w", req.Lang), err)
 			}
 		} else {
 			if err := r.ParseForm(); err != nil {
-				logger.Error(langText("Failed to parse form data: %v", "Failed to parse form data: %v", "Failed to parse form data: %v", req.Lang), err)
-				return nil, fmt.Errorf("Failed to parse form data: %w", err)
+				logger.Error(langText("解析表单数据失败: %v", "Failed to parse form data: %v", "フォームデータの解析に失敗しました: %v", req.Lang), err)
+				return nil, fmt.Errorf(langText("解析表单数据失败: %w", "Failed to parse form data: %w", "フォームデータの解析に失敗しました: %w", req.Lang), err)
 			}
 		}
 		req.Host = r.FormValue("host")
@@ -199,8 +199,8 @@ func parseInspectRequest(r *http.Request) (*DBConnectionRequest, error) {
 		}
 
 	} else {
-		logger.Error(langText("Unsupported Content-Type: %s", "Unsupported Content-Type: %s", "Unsupported Content-Type: %s", req.Lang), contentType)
-		return nil, fmt.Errorf("Unsupported Content-Type: %s", contentType)
+		logger.Error(langText("不支持的内容类型: %s", "Unsupported Content-Type: %s", "サポートされていないコンテンツタイプ: %s", req.Lang), contentType)
+		return nil, fmt.Errorf(langText("不支持的内容类型: %s", "Unsupported Content-Type: %s", "サポートされていないコンテンツタイプ: %s", req.Lang), contentType)
 	}
 	return &req, nil
 }
@@ -208,10 +208,10 @@ func parseInspectRequest(r *http.Request) (*DBConnectionRequest, error) {
 // validateInspectParameters validates the inspection request parameters
 func validateInspectParameters(req *DBConnectionRequest) error {
 	if req.Host == "" || req.Port == "" || req.Service == "" || req.Username == "" {
-		return fmt.Errorf("Host, port, service name and username cannot be empty")
+		return fmt.Errorf(langText("主机、端口、服务名和用户名不能为空", "Host, port, service name and username cannot be empty", "ホスト、ポート、サービス名、ユーザー名は空にできません", req.Lang))
 	}
 	if len(req.Items) == 0 {
-		return fmt.Errorf("Inspection items cannot be empty")
+		return fmt.Errorf(langText("巡检项不能为空", "Inspection items cannot be empty", "検査項目は空にできません", req.Lang))
 	}
 	// More validation logic can be added here, e.g., port number format.
 	return nil
@@ -224,7 +224,7 @@ func handleRequestValidation(r *http.Request) (*DBConnectionRequest, error) {
 
 	req, err := parseInspectRequest(r)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse inspect request: %w", err)
+		return nil, fmt.Errorf(langText("解析巡检请求失败: %w", "failed to parse inspect request: %w", "検査リクエストの解析に失敗しました: %w", req.Lang), err)
 	}
 
 	logger.Infof("Parsed inspection request: Business='%s', Host='%s', Port='%s', Service='%s', Username='%s', ItemsCount=%d, Lang='%s'",
@@ -241,7 +241,7 @@ func handleRequestValidation(r *http.Request) (*DBConnectionRequest, error) {
 func establishDBConnection(req *DBConnectionRequest) (*sql.DB, *db.FullDBInfo, error) {
 	portInt, convErr := strconv.Atoi(req.Port)
 	if convErr != nil {
-		return nil, nil, fmt.Errorf("invalid port number '%s': %w", req.Port, convErr)
+		return nil, nil, fmt.Errorf(langText("无效的端口号 '%s': %w", "invalid port number '%s': %w", "無効なポート番号 '%s': %w", req.Lang), req.Port, convErr)
 	}
 
 	dbConn, err := db.Connect(db.ConnectionDetails{
@@ -253,13 +253,13 @@ func establishDBConnection(req *DBConnectionRequest) (*sql.DB, *db.FullDBInfo, e
 		ConnectionType: "SERVICE_NAME",
 	})
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to connect to database: %w", err)
+		return nil, nil, fmt.Errorf(langText("连接数据库失败: %w", "failed to connect to database: %w", "データベースへの接続に失敗しました: %w", req.Lang), err)
 	}
 
 	fullDBInfo, err := db.GetDatabaseInfo(dbConn)
 	if err != nil {
 		dbConn.Close() // Ensure connection is closed if GetDatabaseInfo fails
-		return nil, nil, fmt.Errorf("failed to get database info: %w", err)
+		return nil, nil, fmt.Errorf(langText("获取数据库信息失败: %w", "failed to get database info: %w", "データベース情報の取得に失敗しました: %w", req.Lang), err)
 	}
 	return dbConn, fullDBInfo, nil
 }
@@ -270,13 +270,13 @@ func processInspectionModules(items []string, dbConn *sql.DB, lang string, fullD
 	for _, item := range items {
 		module, err := ProcessInspectionItem(item, dbConn, lang, fullDBInfo)
 		if err != nil {
-			logger.Error(langText("Error processing inspection item %s: %v", "Error processing inspection item %s: %v", "Error processing inspection item %s: %v", lang), item, err)
+			logger.Error(langText("处理巡检项 %s 时出错: %v", "Error processing inspection item %s: %v", "検査項目 %s の処理中にエラーが発生しました: %v", lang), item, err)
 			module = ReportModule{
 				ID:   item,
 				Name: item,
 				Cards: []ReportCard{{
-					Title: "Error",
-					Value: fmt.Sprintf("Error processing inspection item: %v", err),
+					Title: langText("错误", "Error", "エラー", lang),
+					Value: fmt.Sprintf(langText("处理巡检项时出错: %v", "Error processing inspection item: %v", "検査項目の処理中にエラーが発生しました: %v", lang), err),
 				}},
 			}
 		}
@@ -305,7 +305,7 @@ func prepareReportData(req *DBConnectionRequest, fullDBInfo *db.FullDBInfo, modu
 
 	reportData := ReportData{
 		Lang:           lang,
-		Title:          "Oracle Database Inspection Report",
+		Title:          langText("Oracle 数据库巡检报告", "Oracle Database Inspection Report", "Oracleデータベース検査レポート", lang),
 		BusinessName:   req.Business,
 		DBName:         fullDBInfo.Database.Name.String,
 		DBFullInfo:     dbInfoStr,

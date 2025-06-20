@@ -28,8 +28,8 @@ func processObjectsModule(dbConn *sql.DB, lang string) (cards []ReportCard, tabl
 	if overviewErr != nil {
 		logger.Errorf("Error processing objects module - failed to get object type statistics: %v", overviewErr)
 		cards = append(cards, ReportCard{
-			Title: langText("Object Type Count Error", "Object Type Count Error", "Object Type Count Error", lang),
-			Value: fmt.Sprintf(langText("Failed to get object type counts: %v", "Failed to get object type counts: %v", "Failed to get object type counts: %v", lang), overviewErr),
+			Title: langText("对象类型计数错误", "Object Type Count Error", "オブジェクトタイプカウントエラー", lang),
+			Value: fmt.Sprintf(langText("获取对象类型计数失败: %v", "Failed to get object type counts: %v", "オブジェクトタイプ数の取得に失敗しました: %v", lang), overviewErr),
 		})
 		overallErr = appendError(overallErr, overviewErr)
 	} else if allDbObjectInfo != nil && len(allDbObjectInfo.Overview) > 0 {
@@ -45,8 +45,8 @@ func processObjectsModule(dbConn *sql.DB, lang string) (cards []ReportCard, tabl
 		tables = append(tables, objCountTable)
 	} else {
 		cards = append(cards, ReportCard{
-			Title: langText("Object Type Statistics", "Object Type Statistics", "Object Type Statistics", lang),
-			Value: langText("No object type statistics data available.", "No object type statistics data available.", "No object type statistics data available.", lang),
+			Title: langText("对象类型统计", "Object Type Statistics", "オブジェクトタイプ統計", lang),
+			Value: langText("没有可用的对象类型统计数据。", "No object type statistics data available.", "利用可能なオブジェクトタイプ統計データがありません。", lang),
 		})
 	}
 
@@ -54,14 +54,14 @@ func processObjectsModule(dbConn *sql.DB, lang string) (cards []ReportCard, tabl
 	if topSegmentsErr != nil {
 		logger.Errorf("Error processing objects module - failed to get Top Segments information: %v", topSegmentsErr)
 		cards = append(cards, ReportCard{
-			Title: langText("Top Segments by Size Error", "Top Segments by Size Error", "Top Segments by Size Error", lang),
-			Value: fmt.Sprintf(langText("Failed to get top segments by size: %v", "Failed to get top segments by size: %v", "Failed to get top segments by size: %v", lang), topSegmentsErr),
+			Title: langText("按大小排列的热点段错误", "Top Segments by Size Error", "サイズ別トップセグメントエラー", lang),
+			Value: fmt.Sprintf(langText("按大小获取热点段失败: %v", "Failed to get top segments by size: %v", "サイズ順のトップセグメントの取得に失敗しました: %v", lang), topSegmentsErr),
 		})
 		overallErr = appendError(overallErr, topSegmentsErr)
 	} else if allDbObjectInfo != nil && len(allDbObjectInfo.TopSegments) > 0 {
 		topSegmentsTable := &ReportTable{
-			Name:    langText("Top Segments by Size", "Top Segments by Size", "Top Segments by Size", lang),
-			Headers: []string{langText("Owner", "Owner", "Owner", lang), langText("Segment Name", "Segment Name", "Segment Name", lang), langText("Segment Type", "Segment Type", "Segment Type", lang), langText("Size (GB)", "Size (GB)", "Size (GB)", lang)},
+			Name:    langText("按大小排列的热点段", "Top Segments by Size", "サイズ別トップセグメント", lang),
+			Headers: []string{langText("所有者", "Owner", "所有者", lang), langText("段名", "Segment Name", "セグメント名", lang), langText("段类型", "Segment Type", "セグメントタイプ", lang), langText("大小(GB)", "Size (GB)", "サイズ(GB)", lang)},
 			Rows:    [][]string{},
 		}
 		for _, ts := range allDbObjectInfo.TopSegments {
@@ -72,8 +72,8 @@ func processObjectsModule(dbConn *sql.DB, lang string) (cards []ReportCard, tabl
 		tables = append(tables, topSegmentsTable)
 	} else {
 		cards = append(cards, ReportCard{
-			Title: langText("Top Segments by Size", "Top Segments by Size", "Top Segments by Size", lang),
-			Value: langText("No segment data available.", "No segment data available.", "No segment data available.", lang),
+			Title: langText("按大小排列的热点段", "Top Segments by Size", "サイズ別トップセグメント", lang),
+			Value: langText("无段数据可用。", "No segment data available.", "セグメントデータがありません。", lang),
 		})
 	}
 
@@ -81,14 +81,14 @@ func processObjectsModule(dbConn *sql.DB, lang string) (cards []ReportCard, tabl
 	if invalidObjectsErr != nil {
 		logger.Errorf("Error processing objects module - failed to get Invalid Objects list: %v", invalidObjectsErr)
 		cards = append(cards, ReportCard{
-			Title: langText("Invalid Objects Error", "Invalid Objects Error", "Invalid Objects Error", lang),
-			Value: fmt.Sprintf(langText("Failed to get invalid objects list: %v", "Failed to get invalid objects list: %v", "Failed to get invalid objects list: %v", lang), invalidObjectsErr),
+			Title: langText("无效对象错误", "Invalid Objects Error", "無効なオブジェクトエラー", lang),
+			Value: fmt.Sprintf(langText("获取无效对象列表失败: %v", "Failed to get invalid objects list: %v", "無効なオブジェクトリストの取得に失敗しました: %v", lang), invalidObjectsErr),
 		})
 		overallErr = appendError(overallErr, invalidObjectsErr)
 	} else if allDbObjectInfo != nil && len(allDbObjectInfo.InvalidObjects) > 0 {
 		invalidObjectsTable := &ReportTable{
-			Name:    langText("Invalid Objects", "Invalid Objects", "Invalid Objects", lang),
-			Headers: []string{langText("Owner", "Owner", "Owner", lang), langText("Object Name", "Object Name", "Object Name", lang), langText("Object Type", "Object Type", "Object Type", lang), langText("Created", "Created", "Created", lang), langText("Last DDL Time", "Last DDL Time", "Last DDL Time", lang)},
+			Name:    langText("无效对象", "Invalid Objects", "無効なオブジェクト", lang),
+			Headers: []string{langText("所有者", "Owner", "所有者", lang), langText("对象名", "Object Name", "オブジェクト名", lang), langText("对象类型", "Object Type", "オブジェクトタイプ", lang), langText("创建时间", "Created", "作成日時", lang), langText("最后DDL时间", "Last DDL Time", "最終DDL時間", lang)},
 			Rows:    [][]string{},
 		}
 		for _, obj := range allDbObjectInfo.InvalidObjects {
@@ -98,8 +98,8 @@ func processObjectsModule(dbConn *sql.DB, lang string) (cards []ReportCard, tabl
 		tables = append(tables, invalidObjectsTable)
 	} else {
 		cards = append(cards, ReportCard{
-			Title: langText("Invalid Objects", "Invalid Objects", "Invalid Objects", lang),
-			Value: langText("No invalid object data available.", "No invalid object data available.", "No invalid object data available.", lang),
+			Title: langText("无效对象", "Invalid Objects", "無効なオブジェクト", lang),
+			Value: langText("无无效对象数据可用。", "No invalid object data available.", "無効なオブジェクトデータがありません。", lang),
 		})
 	}
 
